@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wall -fno-warn-type-defaults #-}
-{-# OPTIONS_GHC -fdefer-typed-holes -fshow-hole-constraints -funclutter-valid-hole-fits #-}
-
 -- | A boolean expression (possibly unevaluated).
 data BOOL
   = T -- ˆ Boolean TRUE.
