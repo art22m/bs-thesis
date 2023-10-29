@@ -1,25 +1,14 @@
 cabal-version:      2.4
 name:               packed-memory-quadtree
 version:            0.1.0.0
-
--- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
-
--- A URL where users can report bugs.
--- bug-reports:
-
--- The license under which the package is released.
--- license:
-author:             Artem Murashko
-maintainer:         art22m@yandex-team.ru
-
--- A copyright notice.
--- copyright:
--- category:
-extra-source-files: CHANGELOG.md
+synopsis:           Purely Functional Packed-Memory QuadTree with Batch Inserts and Range Queries
+category:           Data
+license:            BSD3
+license-file:       LICENSE
+author:             Nikolai Kudasov, Artem Murashko
+maintainer:         n.kudasov@innopolis.ru, artmurashko@yandex.ru
+copyright:          2023-2024 Innopolis University
+--extra-source-files: CHANGELOG.md
 
 executable packed-memory-quadtree
     main-is:          Main.hs
