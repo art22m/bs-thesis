@@ -1,4 +1,4 @@
-module Data.TestLib where 
+module Data.TestLib where
 
-helloWorld :: IO()
+helloWorld :: IO ()
 helloWorld = putStrLn "Hello World from Data.TestLib"
