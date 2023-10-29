@@ -1,4 +1,6 @@
 module Main where
 
+import qualified Data.TestLib
+
 main :: IO ()
-main = putStrLn "Hello, Haskell!"
+main = Data.TestLib.helloWorld
