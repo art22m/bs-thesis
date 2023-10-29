@@ -16,15 +16,21 @@ common common-all
 
 library
     import:           common-all
-    exposed-modules:  Data.TestLib
+    exposed-modules:  
+        Data.TestLib,
+        Data.PackedMemoryArray
     build-depends:    
-        base ^>=4.17.2.0
+        base ^>=4.17.2.0,
+        primitive,
+        vector
     hs-source-dirs:   src
 
 executable packed-memory-quadtree
     import:           common-all
     main-is:          Main.hs
-    other-modules:    Data.TestLib
+    other-modules:    
+        Data.TestLib,
+        Data.PackedMemoryArray
     build-depends:      
         base ^>=4.17.2.0,
         haskell-say ^>=1.0.0.0
