@@ -10,13 +10,13 @@ import Prelude
 
 -- | Data type
 data PMA k v = PMA
-  { capacity              :: Int              -- ^ Total capacity of PMA.
-  , segmentCapacity       :: Int              -- ^ Size of each segment.
-  , height                :: Int              -- ^ Height of the binary tree for elements.
+  { capacity              :: Int                   -- ^ Total capacity of PMA.
+  , segmentCapacity       :: Int                   -- ^ Size of each segment.
+  , height                :: Int                   -- ^ Height of the binary tree for elements.
   , elements              :: Vector (Maybe (k, v)) -- ^ Vector of all cells (elements or gaps).
-  , cardinality           :: Int              -- ^ Number of elements contained.
-  , segmentsCount         :: Int              -- ^ Number of segments
-  , segmentsCardinalities :: Vector Int       -- ^ Number of elements contained in each segment.
+  , cardinality           :: Int                   -- ^ Number of elements contained.
+  , segmentsCount         :: Int                   -- ^ Number of segments
+  , segmentsCardinalities :: Vector Int            -- ^ Number of elements contained in each segment.
   } deriving (Show, Eq, Foldable)
 
 -- | Constants
@@ -24,7 +24,7 @@ minCapacity :: Integer
 minCapacity = 8
 
 -- Density tresholds
--- 0 <= p1 < ph <= th < t1
+-- p0 < ... < ph < th < ... < t0
 ph :: Double
 ph = 0.3
 
@@ -51,62 +51,13 @@ init c = PMA
 
 -- | Accessors 
 
--- Length information 
-
 null :: PMA k a -> Bool
 null pma = (cardinality pma) == 0
 
 size :: PMA k a -> Int
 size pma = cardinality pma
 
-
-
 -- | Methods
-
--- * insert
-
--- insertLookupWithKey :: forall k a. (Ord k) 
---                     => (k -> a -> a -> a) 
---                     -> k 
---                     -> a 
---                     -> PMA k a 
---                     -> (Maybe a, PMA k a)
--- insertLookupWithKey combine key val pma =
---     case lookupInsert of Nothing            -> (Nothing, updatedPMA)
---                          Just (pma, oldVal) -> (Just oldVal, pma)
---   where
---     lookupInsert = do
---       oldVal <- pma !? key
---       let combined = combine key val oldVal 
---       let insertIndex = (findPlaceIndex key pma)
---       let toInsert = Just (key, combined)
---       return (pma { 
---         elements = Vector.update (elements pma) (Vector.singleton (insertIndex, toInsert)) 
---         }, oldVal)
-
---     updatedPMA = if (((segmentsCardinalities newPMA) Vector.! segmentId) == (segmentCapacity pma)) then (rebalance newPMA segmentId) else newPMA
-
---     segmentId = findSegment pma key
-
---     (elements', posToInsert) = findPos (elements pma) ((segmentCapacity pma)*(segmentId) + ((segmentsCardinalities pma) Vector.! segmentId))
---       where
---         findPos :: Vector (Maybe (k, a)) -> Int -> (Vector (Maybe (k, a)), Int)
---         findPos vec pos = if (pos > 0) && ((Just key) < fmap fst (vec Vector.! (pos - 1)))
---                         then findPos (Vector.update vec (Vector.fromList [(pos - 1, Nothing), (pos, vec Vector.! (pos - 1))])) (pos - 1)
---                         else (vec, pos)
-
---     newElements = Vector.update elements' (Vector.singleton (posToInsert, Just (key, val)))
-
---     newPMA = PMA
---             { capacity = capacity pma
---             , segmentCapacity = segmentCapacity pma
---             , height = height pma
---             , elements = newElements
---             , cardinality = (cardinality pma) + 1
---             , segmentsCnt = segmentsCnt pma
---             , segmentsCardinalities = Vector.update (segmentsCardinalities pma) (Vector.singleton (segmentId, ((segmentsCardinalities pma) Vector.! segmentId) + 1))
---             }
-
 
 -- * lookup
 
@@ -132,21 +83,23 @@ ceilPower2 value = 2 ^ (ceiling (log2 value))
 
 -- finds index of segment where and element is stored
 findSegment :: forall k v. Ord k => PMA k v -> k -> Int
-findSegment pma key = if Data.PackedMemoryArray.null pma then 0 else find pma 0 (segmentsCount pma - 1)
+findSegment pma key 
+  | Data.PackedMemoryArray.null pma = 0
+  | otherwise = find pma 0 (segmentsCount pma - 1)
   where
     find :: PMA k v -> Int -> Int -> Int
-    find pma lb ub = if (lb < ub) then (find pma newLB newUB) else lb
+    find pma lhs rhs 
+      | lhs < rhs = find pma newlhs newrhs
+      | otherwise = lhs
       where
-        mid = (lb + ub) `div` 2
-        (newLB, newUB) =  if ((Just key) < fmap fst ((elements pma) Vector.! (mid * (segmentCapacity pma))))
-                        then (lb, mid - 1)
-                        else  if ((Just key) <= fmap fst ((elements pma) Vector.! ((mid * (segmentCapacity pma)) + ((segmentsCardinalities pma) Vector.! mid) - 1)))
-                            then (mid, mid)
-                            else (mid + 1, ub)
+        mid = (lhs + rhs) `div` 2
+        elementIndex = mid * (segmentCapacity pma)
+        (newlhs, newrhs) 
+          | Just key < fmap fst ((elements pma) Vector.! elementIndex) = (lhs, mid - 1)
+          | Just key <= fmap fst ((elements pma) Vector.! (elementIndex + ((segmentsCardinalities pma) Vector.! mid) - 1)) = (mid, mid)
+          | otherwise = (mid + 1, rhs)
 
 -- finds index where an element should be put
--- complexity – O (log (n / log n) + log n) = O (2 log (n) - log log n)
--- replace linear search to binary – get O (log (n / log n) + log log n) = O (log n)
 findPlaceIndex :: Ord k => k -> PMA k a -> Int
 findPlaceIndex val pma = start + linSearch (Vector.slice start len ((fmap fst) <$> elements pma))
   where
@@ -154,6 +107,7 @@ findPlaceIndex val pma = start + linSearch (Vector.slice start len ((fmap fst) <
     start = segmentId * segmentCapacity pma
     len = segmentCapacity pma
 
-    linSearch slice = fromMaybe
+    -- TODO: BinSearch
+    linSearch slice = fromMaybe 
         (length slice - 1)
         (Vector.findIndex (>= Just val) slice)
