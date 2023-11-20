@@ -159,7 +159,7 @@ fromList = fromVector . Vector.fromList
 insert :: (Ord k) => k -> a -> PMA k a -> PMA k a
 insert k v pma
   | pos < 0 = updatedPma
-  | fmap fst (cells (pma) Vector.! pos) == Just k = updatedInPlace
+  | fmap fst (cells pma Vector.! pos) == Just k = updatedInPlace
   | otherwise = updatedPma
   where
     pos = binsearch k (cells pma)
@@ -170,8 +170,7 @@ insert k v pma
       let newPma = pma {cardinality = cardinality pma + 1}
       mcells <- Vector.thaw (cells pma)
       insertPos <- insertAfter pos (k,v) mcells
-      balancedPma <- rebalance newPma insertPos mcells
-      return balancedPma
+      rebalance newPma insertPos mcells
 
 insertAfter :: Int -> a -> MVector s (Maybe a) -> ST s Int
 insertAfter pos a vec = do

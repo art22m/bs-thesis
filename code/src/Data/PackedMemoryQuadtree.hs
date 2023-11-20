@@ -5,11 +5,10 @@
 
 module Data.PackedMemoryQuadtree where
 
-import Data.Char (chr, ord)
-import Data.Ord (comparing)
+import Data.Bits 
+import Data.List
 import qualified Data.PackedMemoryArrayMap as PMAMap
-import GHC.TypeLits (KnownNat, Nat)
-import Numeric (readInt, showIntAtBase)
+import GHC.TypeLits (Nat)
 
 ---- Indexing
 
@@ -18,23 +17,18 @@ data Coords (n :: Nat) = Coords Int Int
 newtype ZIndex (n :: Nat) = ZIndex Int
   deriving (Eq, Ord, Show)
 
-showBinary :: Int -> String
-showBinary n = showIntAtBase 2 (\d -> chr (d + ord '0')) n ""
-
-readBinary :: String -> Int
-readBinary = fst . head . readInt 2 (const True) (\c -> ord c - ord '0')
-
-interleaveBinary :: String -> String -> String
-interleaveBinary xs ys = concat (alignWith (\x y -> x : y : "") xs ys)
-  where
-    alignWith f [] ys' = map (f '0') ys'
-    alignWith f xs' [] = map (`f` '0') xs'
-    alignWith f (x : xs') (y : ys') = f x y : alignWith f xs' ys'
-
-zindexOf :: Coords n -> ZIndex n
+zindexOf :: Coords n ->  ZIndex n
 zindexOf (Coords x y) =
-  ZIndex $
-    readBinary (reverse (interleaveBinary (reverse (showBinary x)) (reverse (showBinary y))))
+  ZIndex $ interleaveBinary x y
+
+interleaveBinary :: Int -> Int -> Int
+interleaveBinary x y = foldl' (\acc i -> acc .|. (shiftL (bitAt x i) (2 * i) .|. shiftL (bitAt y i) (2 * i + 1))) 0 shifts
+  where
+    shifts = [0..max (finiteBitSize x) (finiteBitSize y) - 1]
+    
+    bitAt :: Int -> Int -> Int 
+    bitAt x' i = shiftR x' i .&. 1
+
 
 ---- Data Structure
 
