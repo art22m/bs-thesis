@@ -42,51 +42,40 @@ isRelevant minZIndex maxZIndex testZIndex =
     Coords maxX maxY = fromZIndex maxZIndex
     Coords testX testY = fromZIndex testZIndex
 
-isHorizontalSplit :: ZIndex n -> ZIndex n -> Bool
-isHorizontalSplit (ZIndex l) (ZIndex r) = odd (go shifts)
-  where
-    shifts = reverse [0 .. finiteBitSize l - 1]
-
-    go :: [Int] -> Int
-    go [] = 0
-    go (x : xs)
-      | bitAt l x == bitAt r x = go xs
-      | otherwise = x
-
 bounds :: Int -> Int -> (Int, Int)
 bounds l r = (litMax, bigMin)
   where
     lxorb = xor l r
     landb = l .&. r
-    bitSize = finiteBitSize l
+    intBitSize = finiteBitSize l
 
     leftPartSize = countLeadingZeros lxorb
-    rightPartSize = bitSize - leftPartSize
+    rightPartSize = intBitSize - leftPartSize
 
-    leftPart = zeroBits landb rightPartSize
-    bigMinRight = zeroBits lxorb (rightPartSize - 1) -- 00..00_100..00
+    leftPart = resetBits landb rightPartSize
+    bigMinRight = resetBits lxorb (rightPartSize - 1) -- 00..00_100..00
     litMaxRight = bigMinRight - 1 --- 00..00_011..11
     litMax = leftPart .|. litMaxRight
     bigMin = leftPart .|. bigMinRight
 
-    -- zeroBits 0x1001010 3 => 0x1001000 (zeroes 3 bits from right)
-    zeroBits :: Int -> Int -> Int
-    zeroBits num n = shiftL (shiftR num n) n -- num >> n << n
+    -- resetBits 0x1001010 3 => 0x1001000 (zeroes 3 bits from right)
+    resetBits :: Int -> Int -> Int
+    resetBits num n = shiftL (shiftR num n) n -- num >> n << n
 
 splitRegion :: ZIndex n -> ZIndex n -> (ZIndex n, ZIndex n)
-splitRegion l r
-  | isHorizontal = (toZIndex (Coords xr litMax), toZIndex (Coords xl bigMin))
+splitRegion (ZIndex l) (ZIndex r)
+  | isHorizontalSplit = (toZIndex (Coords xr litMax), toZIndex (Coords xl bigMin))
   | otherwise = (toZIndex (Coords litMax yr), toZIndex (Coords bigMin yl))
   where
-    Coords xl yl = fromZIndex l
-    Coords xr yr = fromZIndex r
+    Coords xl yl = fromZIndex (ZIndex l)
+    Coords xr yr = fromZIndex (ZIndex r)
 
-    isHorizontal = isHorizontalSplit l r
-    (litMax, bigMin) = if isHorizontal then bounds yl yr else bounds xl xr
+    isHorizontalSplit = even (countLeadingZeros (xor l r))
+    (litMax, bigMin) = if isHorizontalSplit then bounds yl yr else bounds xl xr
 
 ---- Data Structure
 
-data Quadtree a = Quadtree {getPMAMap :: PMAMap.Map Int a}
+newtype Quadtree a = Quadtree {getPMAMap :: PMAMap.Map Int a}
   deriving (Show)
 
 null :: Quadtree v -> Bool
