@@ -155,7 +155,6 @@ fromVector vec = runST $ do
 fromList :: (Ord k) => [(k, a)] -> PMA k a
 fromList = fromVector . Vector.fromList
 
-
 insert :: (Ord k) => k -> a -> PMA k a -> PMA k a
 insert k v pma
   | pos < 0 = updatedPma
@@ -203,7 +202,7 @@ shiftElems pos vec
           toSlice = MVector.slice (pos+1) sliceLen vec
       move toSlice fromSlice
       return pos
-
+    
     shiftLeft pos emptyPos = do
       let sliceLen = pos - emptyPos
           fromSlice = MVector.slice (emptyPos+1) sliceLen vec
@@ -265,7 +264,7 @@ shiftCellsR pos emptyPos vec = do
   return (newVec, pos)
 
 -- shift cells from position to the first empty cell to the left
-shiftCellsL :: Int -> Int -> Vector (Maybe a) -> ST s ((Vector (Maybe a), Int))
+shiftCellsL :: Int -> Int -> Vector (Maybe a) -> ST s (Vector (Maybe a), Int)
 shiftCellsL pos emptyPos vec = do
     v <- Vector.thaw vec
     let sliceLen = pos - emptyPos

@@ -7,8 +7,18 @@ module Data.PackedMemoryQuadtree where
 
 import Data.Bits
 import Data.List
-import qualified Data.PackedMemoryArrayMap as PMAMap
 import GHC.TypeLits (Nat)
+
+import qualified Data.PackedMemoryArrayMap as Map
+import           Data.PackedMemoryArrayMap (Map)
+
+import qualified Data.PackedMemoryArray    as PMA
+import           Data.PackedMemoryArray    (PMA)
+
+import qualified Data.Vector               as Vector
+import           Data.Vector               -- (Vector)
+import Data.Maybe (fromMaybe)
+import Control.Arrow (Arrow(first))
 
 ---- ZIndex
 
@@ -22,14 +32,14 @@ toZIndex :: Coords n -> ZIndex n
 toZIndex (Coords x y) = ZIndex val
   where
     shifts = [0 .. finiteBitSize x - 1]
-    val = foldl' (\acc i -> acc .|. (shiftL (bitAt x i) (2 * i) .|. shiftL (bitAt y i) (2 * i + 1))) 0 shifts
+    val = Data.List.foldl' (\acc i -> acc .|. (shiftL (bitAt x i) (2 * i) .|. shiftL (bitAt y i) (2 * i + 1))) 0 shifts
 
 fromZIndex :: ZIndex n -> Coords n
 fromZIndex (ZIndex val) = Coords x y
   where
     shifts = [0 .. (finiteBitSize val `div` 2 - 1)]
-    x = foldl' (\acc i -> acc .|. shiftL (bitAt val (2 * i)) i) 0 shifts
-    y = foldl' (\acc i -> acc .|. shiftL (bitAt val (2 * i + 1)) i) 0 shifts
+    x = Data.List.foldl' (\acc i -> acc .|. shiftL (bitAt val (2 * i)) i) 0 shifts
+    y = Data.List.foldl' (\acc i -> acc .|. shiftL (bitAt val (2 * i + 1)) i) 0 shifts
 
 bitAt :: Int -> Int -> Int
 bitAt x i = shiftR x i .&. 1
@@ -42,6 +52,9 @@ isRelevant minZIndex maxZIndex testZIndex =
     Coords maxX maxY = fromZIndex maxZIndex
     Coords testX testY = fromZIndex testZIndex
 
+-- bounds calculates LitMax and BigMin values.
+-- LitMax’s value can be calculated as ‘all common most significant bits’ in a and b followed by a 0 and then 1’s, 
+-- and the BigMin’s y value would be ‘all common most significant bits’ in a and b followed by 1 and then 0’s.
 bounds :: Int -> Int -> (Int, Int)
 bounds l r = (litMax, bigMin)
   where
@@ -60,7 +73,7 @@ bounds l r = (litMax, bigMin)
 
     -- resetBits 0x1001010 3 => 0x1001000 (zeroes 3 bits from right)
     resetBits :: Int -> Int -> Int
-    resetBits num n = shiftL (shiftR num n) n -- num >> n << n
+    resetBits num n = shiftL (shiftR num n) n 
 
 splitRegion :: ZIndex n -> ZIndex n -> (ZIndex n, ZIndex n)
 splitRegion (ZIndex l) (ZIndex r)
@@ -75,28 +88,52 @@ splitRegion (ZIndex l) (ZIndex r)
 
 ---- Data Structure
 
-newtype Quadtree a = Quadtree {getPMAMap :: PMAMap.Map Int a}
+newtype Quadtree a = Quadtree {getPMAMap :: Map Int a}
   deriving (Show)
 
 null :: Quadtree v -> Bool
-null qt = PMAMap.null (getPMAMap qt)
+null qt = Map.null (getPMAMap qt)
 
 empty :: Quadtree v
-empty = Quadtree {getPMAMap = PMAMap.empty}
+empty = Quadtree {getPMAMap = Map.empty}
 
 singleton :: Coords n -> v -> Quadtree v
-singleton c v = Quadtree {getPMAMap = PMAMap.singleton zid v}
+singleton c v = Quadtree {getPMAMap = Map.singleton zid v}
   where
     ZIndex zid = toZIndex c
 
 lookup :: Coords n -> Quadtree v -> Maybe v
-lookup c qt = PMAMap.lookup zid pm
+lookup c qt = Map.lookup zid pm
   where
     pm = getPMAMap qt
     ZIndex zid = toZIndex c
 
+rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
+rangeLookupDummy cl cr qt = []
+  where 
+    ZIndex zl = toZIndex cl 
+    ZIndex zr = toZIndex cr
+
+    pma = Map.getPMA (getPMAMap qt)
+    pmaPos = PMA.binsearch zl (PMA.cells pma)
+    dataFromPMA = rangePMA pmaPos []
+
+    rangePMA :: Int -> [(Int, v)] -> [(Int, v)]
+    rangePMA p tmp 
+      | shouldStop = case PMA.cells pma Vector.! p of 
+        Just c -> c : rangePMA (p + 1)
+        Nothing  -> rangePMA (p + 1) tmp
+      | otherwise  = [] 
+      where 
+        shouldStop :: Bool
+        shouldStop = zl <= key && key <= zr
+          where 
+            key = case PMA.cells pma Vector.! p of 
+              (Just (val, _)) -> val 
+              Nothing -> zl
+
 insert :: Coords n -> v -> Quadtree v -> Quadtree v
-insert c v qt = Quadtree {getPMAMap = PMAMap.insertP zid v pm}
+insert c v qt = Quadtree {getPMAMap = Map.insertP zid v pm}
   where
     pm = getPMAMap qt
     ZIndex zid = toZIndex c
