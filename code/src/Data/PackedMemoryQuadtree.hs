@@ -5,20 +5,19 @@
 
 module Data.PackedMemoryQuadtree where
 
+-- (Vector)
+
+import Control.Arrow (Arrow (first))
 import Data.Bits
 import Data.List
-import GHC.TypeLits (Nat)
-
-import qualified Data.PackedMemoryArrayMap as Map
-import           Data.PackedMemoryArrayMap (Map)
-
-import qualified Data.PackedMemoryArray    as PMA
-import           Data.PackedMemoryArray    (PMA)
-
-import qualified Data.Vector               as Vector
-import           Data.Vector               -- (Vector)
 import Data.Maybe (fromMaybe)
-import Control.Arrow (Arrow(first))
+import Data.PackedMemoryArray (PMA)
+import qualified Data.PackedMemoryArray as PMA
+import Data.PackedMemoryArrayMap (Map)
+import qualified Data.PackedMemoryArrayMap as Map
+import Data.Vector
+import qualified Data.Vector as Vector
+import GHC.TypeLits (Nat)
 
 ---- ZIndex
 
@@ -53,7 +52,7 @@ isRelevant minZIndex maxZIndex testZIndex =
     Coords testX testY = fromZIndex testZIndex
 
 -- bounds calculates LitMax and BigMin values.
--- LitMax’s value can be calculated as ‘all common most significant bits’ in a and b followed by a 0 and then 1’s, 
+-- LitMax’s value can be calculated as ‘all common most significant bits’ in a and b followed by a 0 and then 1’s,
 -- and the BigMin’s y value would be ‘all common most significant bits’ in a and b followed by 1 and then 0’s.
 bounds :: Int -> Int -> (Int, Int)
 bounds l r = (litMax, bigMin)
@@ -73,7 +72,7 @@ bounds l r = (litMax, bigMin)
 
     -- resetBits 0x1001010 3 => 0x1001000 (zeroes 3 bits from right)
     resetBits :: Int -> Int -> Int
-    resetBits num n = shiftL (shiftR num n) n 
+    resetBits num n = shiftL (shiftR num n) n
 
 splitRegion :: ZIndex n -> ZIndex n -> (ZIndex n, ZIndex n)
 splitRegion (ZIndex l) (ZIndex r)
@@ -108,29 +107,42 @@ lookup c qt = Map.lookup zid pm
     pm = getPMAMap qt
     ZIndex zid = toZIndex c
 
-rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy cl cr qt = []
-  where 
-    ZIndex zl = toZIndex cl 
+rangeLookupDummiest :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
+rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
+  where
+    ZIndex zl = toZIndex cl
     ZIndex zr = toZIndex cr
 
-    pma = Map.getPMA (getPMAMap qt)
-    pmaPos = PMA.binsearch zl (PMA.cells pma)
-    dataFromPMA = rangePMA pmaPos []
+    go :: Int -> Int -> Map Int v -> [(Coords n, v)] -> [(Coords n, v)]
+    go l r pm tmp
+      | l <= r = case Map.lookup r pm of
+          Just val -> go l (r - 1) pm ((fromZIndex (ZIndex r), val) : tmp)
+          Nothing -> go l (r - 1) pm tmp
+      | otherwise = tmp
 
-    rangePMA :: Int -> [(Int, v)] -> [(Int, v)]
-    rangePMA p tmp 
-      | shouldStop = case PMA.cells pma Vector.! p of 
-        Just c -> c : rangePMA (p + 1)
-        Nothing  -> rangePMA (p + 1) tmp
-      | otherwise  = [] 
-      where 
-        shouldStop :: Bool
-        shouldStop = zl <= key && key <= zr
-          where 
-            key = case PMA.cells pma Vector.! p of 
-              (Just (val, _)) -> val 
-              Nothing -> zl
+-- rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
+-- rangeLookupDummy cl cr qt = []
+--   where
+--     ZIndex zl = toZIndex cl
+--     ZIndex zr = toZIndex cr
+
+--     pma = Map.getPMA (getPMAMap qt)
+--     pmaPos = PMA.binsearch zl (PMA.cells pma)
+--     dataFromPMA = rangePMA pmaPos []
+
+--     rangePMA :: Int -> [(Int, v)] -> [(Int, v)]
+--     rangePMA p tmp
+--       | shouldStop = case PMA.cells pma Vector.! p of
+--         Just c -> c : rangePMA (p + 1)
+--         Nothing  -> rangePMA (p + 1) tmp
+--       | otherwise  = []
+--       where
+--         shouldStop :: Bool
+--         shouldStop = zl <= key && key <= zr
+--           where
+--             key = case PMA.cells pma Vector.! p of
+--               (Just (val, _)) -> val
+--               Nothing -> zl
 
 insert :: Coords n -> v -> Quadtree v -> Quadtree v
 insert c v qt = Quadtree {getPMAMap = Map.insertP zid v pm}
