@@ -120,29 +120,28 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
           Nothing -> go l (r - 1) pm tmp
       | otherwise = tmp
 
--- rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
--- rangeLookupDummy cl cr qt = []
---   where
---     ZIndex zl = toZIndex cl
---     ZIndex zr = toZIndex cr
+rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
+rangeLookupDummy cl cr qt = []
+  where
+    ZIndex zl = toZIndex cl
+    ZIndex zr = toZIndex cr
 
---     pma = Map.getPMA (getPMAMap qt)
---     pmaPos = PMA.binsearch zl (PMA.cells pma)
---     dataFromPMA = rangePMA pmaPos []
+    pmaPos = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
+    dataFromPMA = rangePMA (Map.getPMA (getPMAMap qt)) pmaPos []
 
---     rangePMA :: Int -> [(Int, v)] -> [(Int, v)]
---     rangePMA p tmp
---       | shouldStop = case PMA.cells pma Vector.! p of
---         Just c -> c : rangePMA (p + 1)
---         Nothing  -> rangePMA (p + 1) tmp
---       | otherwise  = []
---       where
---         shouldStop :: Bool
---         shouldStop = zl <= key && key <= zr
---           where
---             key = case PMA.cells pma Vector.! p of
---               (Just (val, _)) -> val
---               Nothing -> zl
+    rangePMA :: PMA Int v -> Int -> [(Int, v)] -> [(Int, v)]
+    rangePMA pma p tmp
+      | shouldStop = case PMA.cells pma Vector.! p of
+        Just c -> rangePMA pma (p + 1) (c : tmp)
+        Nothing  -> rangePMA pma (p + 1) tmp
+      | otherwise  = []
+      where
+        shouldStop :: Bool
+        shouldStop = zl <= key && key <= zr
+          where
+            key = case PMA.cells pma Vector.! p of
+              (Just (val, _)) -> val
+              Nothing -> zl
 
 insert :: Coords n -> v -> Quadtree v -> Quadtree v
 insert c v qt = Quadtree {getPMAMap = Map.insertP zid v pm}
