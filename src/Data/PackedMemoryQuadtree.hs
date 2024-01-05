@@ -149,17 +149,21 @@ rangeLookupDummy cl cr qt = (rangePMA (Map.getPMA pmaMap)) Data.List.++ (rangeDM
             shouldContinue = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
-    rangeDMap dmap = go dmap zl []
+    rangeDMap dmap = go dmap zr []
       where
         go :: DMap.Map Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go dmap' p tmp
           | zl <= p && p <= zr = case DMap.lookup p dmap' of
-              Just val -> go dmap' (p + 1) ((fromZIndex' p, val) : tmp)
-              Nothing -> go dmap' (p + 1) tmp
+              Just val -> go dmap' (p - 1) ((fromZIndex' p, val) : tmp)
+              Nothing -> go dmap' (p - 1) tmp
           | otherwise = tmp
 
-insert :: Coords n -> v -> Quadtree v -> Quadtree v
-insert c v qt = Quadtree {getPMAMap = Map.insertP zid v pm}
+insertP :: Coords n -> v -> Quadtree v -> Quadtree v
+insertP c v qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}
   where
-    pm = getPMAMap qt
+    ZIndex zid = toZIndex c
+
+insertE :: Coords n -> v -> Quadtree v -> Quadtree v
+insertE c v qt = Quadtree {getPMAMap = Map.insert zid v (getPMAMap qt)}
+  where
     ZIndex zid = toZIndex c

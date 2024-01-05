@@ -186,7 +186,7 @@ insertE k a m
 
 {-# INLINE insert #-}
 insert :: (Ord k) => k -> a -> Map k a -> Map k a
-insert k a map = new . insertPMA k a . dumpPMA $ map
+insert k a map' = new (insertPMA k a (dumpPMA map'))
 
 {-# NOINLINE insertPMA #-}
 insertPMA :: (Ord k) => k -> a -> Map k a -> Map k a
