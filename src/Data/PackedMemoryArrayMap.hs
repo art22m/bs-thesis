@@ -171,6 +171,7 @@ insertP k0 v0 m
  where
   n0 = DMap.size (getMap m)
 
+-- FIXME: not work. Use insert instead for ephemeral insert.
 insertE :: (Ord k) => k -> a -> Map k a -> Map k a
 insertE k a m 
   -- todo check if it is still better than the usual insert, and flush accordingly
