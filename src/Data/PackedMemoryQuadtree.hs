@@ -10,13 +10,12 @@ module Data.PackedMemoryQuadtree where
 import Control.Arrow (Arrow (first))
 import Data.Bits
 import Data.List
+import qualified Data.Map as DMap
 import Data.Maybe (fromMaybe)
 import Data.PackedMemoryArray (PMA)
 import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
-import qualified Data.Map as DMap
-import qualified Data.Vector as Vector
 import Data.Vector
 import qualified Data.Vector as Vector
 import GHC.TypeLits (Nat)
@@ -134,30 +133,30 @@ rangeLookupDummy cl cr qt = (rangePMA (Map.getPMA pmaMap)) Data.List.++ (rangeDM
 
     rangePMA :: PMA Int v -> [(Coords n, v)]
     rangePMA pma = go pma pmaPos []
-      where 
+      where
         pmaPos = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
 
         go :: PMA Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go pma' p tmp
-          | (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr) = case mval of
-            Just val -> go pma' (p + 1) ((fromZIndex' key, val) : tmp)
-            Nothing -> go pma' (p + 1) tmp
+          | shouldContinue = case mval of
+              Just val -> go pma' (p + 1) ((fromZIndex' key, val) : tmp)
+              Nothing -> go pma' (p + 1) tmp
           | otherwise = tmp
           where
             (key, mval) = case PMA.cells pma' Vector.! p of
-                  (Just (k, v)) -> (k, Just v)
-                  Nothing -> (zl, Nothing)
+              (Just (k, v)) -> (k, Just v)
+              Nothing -> (zl, Nothing)
+            shouldContinue = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
 
-    rangeDMap :: DMap.Map Int v -> [(Coords n, v)] 
+    rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
     rangeDMap dmap = go dmap zl []
       where
         go :: DMap.Map Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
-        go dmap' p tmp 
+        go dmap' p tmp
           | zl <= p && p <= zr = case DMap.lookup p dmap' of
-            Just val -> go dmap' (p + 1) ((fromZIndex' p, val) : tmp)
-            Nothing -> go dmap' (p + 1) tmp
+              Just val -> go dmap' (p + 1) ((fromZIndex' p, val) : tmp)
+              Nothing -> go dmap' (p + 1) tmp
           | otherwise = tmp
-    
 
 insert :: Coords n -> v -> Quadtree v -> Quadtree v
 insert c v qt = Quadtree {getPMAMap = Map.insertP zid v pm}
