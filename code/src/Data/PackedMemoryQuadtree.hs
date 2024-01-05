@@ -16,7 +16,7 @@ import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
 import qualified Data.Map as DMap
-
+import qualified Data.Vector as Vector
 import Data.Vector
 import qualified Data.Vector as Vector
 import GHC.TypeLits (Nat)
@@ -34,6 +34,9 @@ toZIndex (Coords x y) = ZIndex val
   where
     shifts = [0 .. finiteBitSize x - 1]
     val = Data.List.foldl' (\acc i -> acc .|. (shiftL (bitAt x i) (2 * i) .|. shiftL (bitAt y i) (2 * i + 1))) 0 shifts
+
+fromZIndex' :: Int -> Coords n
+fromZIndex' v = fromZIndex (ZIndex v)
 
 fromZIndex :: ZIndex n -> Coords n
 fromZIndex (ZIndex val) = Coords x y
@@ -123,20 +126,21 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
       | otherwise = tmp
 
 rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy cl cr qt = []
+rangeLookupDummy cl cr qt = (rangePMA (Map.getPMA pmaMap)) Data.List.++ (rangeDMap (Map.getMap pmaMap))
   where
     ZIndex zl = toZIndex cl
     ZIndex zr = toZIndex cr
+    pmaMap = getPMAMap qt
 
-    rangePMA :: PMA Int v -> [(Int, v)]
+    rangePMA :: PMA Int v -> [(Coords n, v)]
     rangePMA pma = go pma pmaPos []
       where 
         pmaPos = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
 
-        go :: PMA Int v -> Int -> [(Int, v)] -> [(Int, v)]
+        go :: PMA Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go pma' p tmp
-          | zl <= key && key <= zr = case mval of
-            Just val -> go pma' (p + 1) ((key, val) : tmp)
+          | (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr) = case mval of
+            Just val -> go pma' (p + 1) ((fromZIndex' key, val) : tmp)
             Nothing -> go pma' (p + 1) tmp
           | otherwise = tmp
           where
@@ -144,13 +148,13 @@ rangeLookupDummy cl cr qt = []
                   (Just (k, v)) -> (k, Just v)
                   Nothing -> (zl, Nothing)
 
-    rangeDMap :: DMap.Map Int v -> [(Int, v)] 
+    rangeDMap :: DMap.Map Int v -> [(Coords n, v)] 
     rangeDMap dmap = go dmap zl []
       where
-        go :: DMap.Map Int v -> Int -> [(Int, v)] -> [(Int, v)]
+        go :: DMap.Map Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go dmap' p tmp 
           | zl <= p && p <= zr = case DMap.lookup p dmap' of
-            Just val -> go dmap' (p + 1) ((p, val) : tmp)
+            Just val -> go dmap' (p + 1) ((fromZIndex' p, val) : tmp)
             Nothing -> go dmap' (p + 1) tmp
           | otherwise = tmp
     

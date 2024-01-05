@@ -45,5 +45,6 @@ main = do
     print ("------")
 
     print (PMQ.rangeLookupDummiest coords1 coords4 pmq4)
+    print (PMQ.rangeLookupDummy coords1 coords4 pmq4)
 
     putStrLn "end"
