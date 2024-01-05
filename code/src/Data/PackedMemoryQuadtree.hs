@@ -15,6 +15,8 @@ import Data.PackedMemoryArray (PMA)
 import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
+import qualified Data.Map as DMap
+
 import Data.Vector
 import qualified Data.Vector as Vector
 import GHC.TypeLits (Nat)
@@ -126,22 +128,32 @@ rangeLookupDummy cl cr qt = []
     ZIndex zl = toZIndex cl
     ZIndex zr = toZIndex cr
 
-    pmaPos = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
-    dataFromPMA = rangePMA (Map.getPMA (getPMAMap qt)) pmaPos []
+    rangePMA :: PMA Int v -> [(Int, v)]
+    rangePMA pma = go pma pmaPos []
+      where 
+        pmaPos = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
 
-    rangePMA :: PMA Int v -> Int -> [(Int, v)] -> [(Int, v)]
-    rangePMA pma p tmp
-      | shouldStop = case PMA.cells pma Vector.! p of
-        Just c -> rangePMA pma (p + 1) (c : tmp)
-        Nothing  -> rangePMA pma (p + 1) tmp
-      | otherwise  = []
-      where
-        shouldStop :: Bool
-        shouldStop = zl <= key && key <= zr
+        go :: PMA Int v -> Int -> [(Int, v)] -> [(Int, v)]
+        go pma' p tmp
+          | zl <= key && key <= zr = case mval of
+            Just val -> go pma' (p + 1) ((key, val) : tmp)
+            Nothing -> go pma' (p + 1) tmp
+          | otherwise = tmp
           where
-            key = case PMA.cells pma Vector.! p of
-              (Just (val, _)) -> val
-              Nothing -> zl
+            (key, mval) = case PMA.cells pma' Vector.! p of
+                  (Just (k, v)) -> (k, Just v)
+                  Nothing -> (zl, Nothing)
+
+    rangeDMap :: DMap.Map Int v -> [(Int, v)] 
+    rangeDMap dmap = go dmap zl []
+      where
+        go :: DMap.Map Int v -> Int -> [(Int, v)] -> [(Int, v)]
+        go dmap' p tmp 
+          | zl <= p && p <= zr = case DMap.lookup p dmap' of
+            Just val -> go dmap' (p + 1) ((p, val) : tmp)
+            Nothing -> go dmap' (p + 1) tmp
+          | otherwise = tmp
+    
 
 insert :: Coords n -> v -> Quadtree v -> Quadtree v
 insert c v qt = Quadtree {getPMAMap = Map.insertP zid v pm}
