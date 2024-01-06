@@ -5,9 +5,6 @@
 
 module Data.PackedMemoryQuadtree where
 
--- (Vector)
-
-import Control.Arrow (Arrow (first))
 import Data.Bits
 import Data.List
 import qualified Data.Map as DMap
@@ -16,8 +13,8 @@ import Data.PackedMemoryArray (PMA)
 import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
-import Data.Vector
-import qualified Data.Vector as Vector
+import Data.Vector hiding ((++))
+import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
 
 ---- ZIndex
@@ -125,10 +122,12 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
       | otherwise = tmp
 
 rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy cl cr qt = (rangePMA (Map.getPMA pmaMap)) Data.List.++ (rangeDMap (Map.getMap pmaMap))
+rangeLookupDummy cl cr qt = 
+  rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS(Map.getNS pmaMap)
   where
     ZIndex zl = toZIndex cl
     ZIndex zr = toZIndex cr
+
     pmaMap = getPMAMap qt
 
     rangePMA :: PMA Int v -> [(Coords n, v)]
@@ -156,6 +155,23 @@ rangeLookupDummy cl cr qt = (rangePMA (Map.getPMA pmaMap)) Data.List.++ (rangeDM
           | zl <= p && p <= zr = case DMap.lookup p dmap' of
               Just val -> go dmap' (p - 1) ((fromZIndex' p, val) : tmp)
               Nothing -> go dmap' (p - 1) tmp
+          | otherwise = tmp
+
+    rangeNS :: Map.NS Int v -> [(Coords n, v)]
+    rangeNS  Map.M0                  = []
+    rangeNS (Map.M1 as)              = rangeChunk as
+    rangeNS (Map.M2 as bs _ rest)    = rangeChunk as ++ rangeChunk bs ++ rangeNS rest
+    rangeNS (Map.M3 as bs cs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeChunk cs ++ rangeNS rest
+
+    -- TODO: Rewrite with one binsearch + linear then 
+    rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
+    rangeChunk ch = go ch zr []
+      where 
+        go :: Map.Chunk Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
+        go ch' p tmp 
+          | zl <= p && p <= zr = case Map.lookup1 p ch' Nothing of
+              Just val -> go ch' (p - 1) ((fromZIndex' p, val) : tmp)
+              Nothing -> go ch' (p - 1) tmp
           | otherwise = tmp
 
 insertP :: Coords n -> v -> Quadtree v -> Quadtree v
