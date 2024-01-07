@@ -133,7 +133,11 @@ rangeLookupDummy cl cr qt =
     rangePMA :: PMA Int v -> [(Coords n, v)]
     rangePMA pma = go pma pmaPos []
       where
-        pmaPos = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
+        p' = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
+        pmaPos 
+          | p' < 0 = 0 
+          | otherwise = p'
+        -- pmaPos = 0
 
         go :: PMA Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go pma' p tmp
