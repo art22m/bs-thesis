@@ -16,8 +16,8 @@ generateNPoints n = go 0
 main :: IO ()
 main = do
   putStrLn "start"
-  --   test1
-  test2
+  test1
+  --   test2
   putStrLn "end"
 
 test1 :: IO ()
@@ -29,13 +29,8 @@ test1 = do
 
   let pmq1 = PMQ.empty
   let pmq2 = PMQ.insertE coords1 "data c1" pmq1
-  let pmq3 = PMQ.insertP coords2 "data c2" pmq2
-  let pmq4 = PMQ.insertP coords4 "data c4" pmq3
-
-  print (PMQ.lookup coords1 pmq4)
-  print (PMQ.lookup coords2 pmq4)
-  print (PMQ.lookup coords3 pmq4)
-  print (PMQ.lookup coords4 pmq4)
+  let pmq3 = PMQ.insertE coords2 "data c2" pmq2
+  let pmq4 = PMQ.insertE coords4 "data c4" pmq3
 
   print ("------")
 
@@ -53,7 +48,7 @@ test1 = do
 
 test2 :: IO ()
 test2 = do
-  let points_num = 5
+  let points_num = 15
 
   let pmqEmpty = PMQ.empty
   let pmq = generateNPoints points_num "t" pmqEmpty

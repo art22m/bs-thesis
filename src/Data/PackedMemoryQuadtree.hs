@@ -17,6 +17,11 @@ import Data.Vector hiding ((++))
 import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
 
+---- Constants
+
+_MISSES_THRESHOLD :: Integer
+_MISSES_THRESHOLD = 3
+
 ---- ZIndex
 
 data Coords (n :: Nat) = Coords Int Int
@@ -53,8 +58,8 @@ isRelevant minZIndex maxZIndex testZIndex =
     Coords testX testY = fromZIndex testZIndex
 
 -- bounds calculates LitMax and BigMin values.
--- LitMax’s value can be calculated as ‘all common most significant bits’ in a and b followed by a 0 and then 1’s,
--- and the BigMin’s y value would be ‘all common most significant bits’ in a and b followed by 1 and then 0’s.
+-- LitMax’s value of a and b can be calculated as ‘all common most significant bits’ in a and b followed by a 0 and then 1’s,
+-- and the BigMin’s value of a and b would be ‘all common most significant bits’ in a and b followed by 1 and then 0’s.
 bounds :: Int -> Int -> (Int, Int)
 bounds l r = (litMax, bigMin)
   where
@@ -108,6 +113,7 @@ lookup c qt = Map.lookup zid pm
     pm = getPMAMap qt
     ZIndex zid = toZIndex c
 
+-- TODO: Add relevance check
 rangeLookupDummiest :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
   where
@@ -121,9 +127,10 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
           Nothing -> go l (r - 1) pm tmp
       | otherwise = tmp
 
+-- TODO: Add relevance check
 rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy cl cr qt = 
-  rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS(Map.getNS pmaMap)
+rangeLookupDummy cl cr qt =
+  rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
   where
     ZIndex zl = toZIndex cl
     ZIndex zr = toZIndex cr
@@ -134,10 +141,9 @@ rangeLookupDummy cl cr qt =
     rangePMA pma = go pma pmaPos []
       where
         p' = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
-        pmaPos 
-          | p' < 0 = 0 
+        pmaPos
+          | p' < 0 = 0
           | otherwise = p'
-        -- pmaPos = 0
 
         go :: PMA Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go pma' p tmp
@@ -162,21 +168,50 @@ rangeLookupDummy cl cr qt =
           | otherwise = tmp
 
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
-    rangeNS  Map.M0                  = []
-    rangeNS (Map.M1 as)              = rangeChunk as
-    rangeNS (Map.M2 as bs _ rest)    = rangeChunk as ++ rangeChunk bs ++ rangeNS rest
+    rangeNS Map.M0 = []
+    rangeNS (Map.M1 as) = rangeChunk as
+    rangeNS (Map.M2 as bs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeNS rest
     rangeNS (Map.M3 as bs cs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeChunk cs ++ rangeNS rest
 
-    -- TODO: Rewrite with one binsearch + linear then 
+    -- TODO: Rewrite with one binsearch + linear
     rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
     rangeChunk ch = go ch zr []
-      where 
+      where
         go :: Map.Chunk Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
-        go ch' p tmp 
+        go ch' p tmp
           | zl <= p && p <= zr = case Map.lookup1 p ch' Nothing of
               Just val -> go ch' (p - 1) ((fromZIndex' p, val) : tmp)
               Nothing -> go ch' (p - 1) tmp
           | otherwise = tmp
+
+rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
+rangeLookup cl cr qt = []
+  where
+    ZIndex zl = toZIndex cl
+    ZIndex zr = toZIndex cr
+
+    pmaMap = getPMAMap qt
+
+    rangePMA :: PMA Int v -> [(Coords n, v)]
+    rangePMA pma = []
+      where
+        p' = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
+        pmaPos
+          | p' < 0 = 0
+          | otherwise = p'
+
+        go :: PMA Int v -> Int -> Int -> [(Coords n, v)] -> [(Coords n, v)]
+        go pma' p m tmp
+          | shouldContinue = case mval of
+              Just val -> go pma' (p + 1) 0 ((fromZIndex' key, val) : tmp)
+              Nothing -> go pma' (p + 1) (m + 1) tmp
+          | otherwise = tmp
+          where
+            (key, mval) = case PMA.cells pma' Vector.! p of
+              (Just (k, v)) -> (k, Just v)
+              Nothing -> (zl, Nothing)
+            shouldContinue = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
+        
 
 insertP :: Coords n -> v -> Quadtree v -> Quadtree v
 insertP c v qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}
