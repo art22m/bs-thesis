@@ -16,6 +16,7 @@ import qualified Data.PackedMemoryArrayMap as Map
 import Data.Vector hiding ((++))
 import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
+import Control.Applicative (ZipList)
 
 ---- Constants
 
@@ -36,6 +37,7 @@ toZIndex (Coords x y) = ZIndex val
     shifts = [0 .. finiteBitSize x - 1]
     val = Data.List.foldl' (\acc i -> acc .|. (shiftL (bitAt x i) (2 * i) .|. shiftL (bitAt y i) (2 * i + 1))) 0 shifts
 
+-- TODO: Refactor
 fromZIndex' :: Int -> Coords n
 fromZIndex' v = fromZIndex (ZIndex v)
 
@@ -119,7 +121,6 @@ lookup c qt = Map.lookup zid pm
     pm = getPMAMap qt
     ZIndex zid = toZIndex c
 
--- TODO: Add relevance check
 rangeLookupDummiest :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
   where
@@ -136,8 +137,8 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
       where
         shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex r)
 
-rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy cl cr qt =
+rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
+rangeLookupSeq cl cr qt =
   rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
   where
     ZIndex zl = toZIndex cl
@@ -203,27 +204,32 @@ rangeLookupDummy cl cr qt =
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookup cl cr qt = []
+rangeLookup cl cr qt = go qt ranges []
   where
-    ZIndex zl = toZIndex cl
-    ZIndex zr = toZIndex cr
+    ranges = calculateRanges (toZIndex cl) (toZIndex cr)
 
-    pmaMap = getPMAMap qt
+    go :: Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
+    go qt' (r:rs) tmp = rangeLookupSeq (fromZIndex (fst r)) (fromZIndex (snd r)) qt' ++ go qt' rs tmp
+    go _ [] tmp = tmp 
 
-calculateRanges :: Int -> Int -> [(Int, Int)]
-calculateRanges ul br = go ul br ul 0 []
+-- TODO: remove
+calculateRanges' :: Int -> Int -> [(ZIndex n, ZIndex n)]
+calculateRanges' ul br = calculateRanges (ZIndex ul) (ZIndex br)
+
+calculateRanges :: ZIndex n -> ZIndex n -> [(ZIndex n, ZIndex n)]
+calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
   where
-    go :: Int -> Int -> Int -> Int -> [(Int, Int)] -> [(Int, Int)]
+    go :: Int -> Int -> Int -> Int -> [(ZIndex n, ZIndex n)] -> [(ZIndex n, ZIndex n)]
     go l r p m tmp -- Upper left, bottom right, current position, misses count, temp. result
       | inBounds && shouldLookup = go l r (p + 1) 0 tmp
       | m >= _MISSES_THRESHOLD && (litmax < p && p < bigmin) =
-          go bigmin r bigmin 0 ((l, litmax) : tmp)
+          go bigmin r bigmin 0 ((ZIndex l, ZIndex litmax) : tmp)
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
       | m >= _MISSES_THRESHOLD && (bigmin < p) =
-          [(-1, -1)] -- it should be never happen -- TODO: Check if it possible
+          [(ZIndex 0, ZIndex 0)] -- it should be never happen -- TODO: Check if it possible
       | inBounds = go l r (p + 1) (m + 1) tmp
-      | otherwise = (l, r) : tmp
+      | otherwise = (ZIndex l, ZIndex r) : tmp
       where
         inBounds = l <= p && p <= r
         shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)

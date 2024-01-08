@@ -16,8 +16,8 @@ generateNPoints n = go 0
 main :: IO ()
 main = do
   putStrLn "start"
-  test1
-  --   test2
+--   test1
+  test2
   putStrLn "end"
 
 test1 :: IO ()
@@ -45,7 +45,7 @@ test1 = do
   print (PMQ.getPMAMap pmq5)
 
   print (PMQ.rangeLookupDummiest coords1 coords2 pmq5)
-  print (PMQ.rangeLookupDummy coords1 coords2 pmq5)
+  print (PMQ.rangeLookupSeq coords1 coords2 pmq5)
   print (PMQ.rangeLookup coords1 coords2 pmq5)
 
 test2 :: IO ()
@@ -60,6 +60,6 @@ test2 = do
 
   print pmq
   print (PMQ.rangeLookupDummiest l r pmq)
-  print (PMQ.rangeLookupDummy l r pmq)
+  print (PMQ.rangeLookupSeq l r pmq)
   print (PMQ.rangeLookup l r pmq)
 
