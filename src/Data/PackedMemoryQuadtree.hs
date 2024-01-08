@@ -122,10 +122,13 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
 
     go :: Int -> Int -> Map Int v -> [(Coords n, v)] -> [(Coords n, v)]
     go l r pm tmp
-      | l <= r = case Map.lookup r pm of
+      | l <= r && shouldLookup = case Map.lookup r pm of
           Just val -> go l (r - 1) pm ((fromZIndex (ZIndex r), val) : tmp)
           Nothing -> go l (r - 1) pm tmp
+      | l <= r = go l (r - 1) pm tmp
       | otherwise = tmp
+      where 
+        shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex r)
 
 -- TODO: Add relevance check
 rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
@@ -147,25 +150,31 @@ rangeLookupDummy cl cr qt =
 
         go :: PMA Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go pma' p tmp
-          | shouldContinue = case mval of
+          | inBounds && shouldLookup = case mval of
               Just val -> go pma' (p + 1) ((fromZIndex' key, val) : tmp)
               Nothing -> go pma' (p + 1) tmp
+          | inBounds = go pma' (p + 1) tmp
           | otherwise = tmp
           where
             (key, mval) = case PMA.cells pma' Vector.! p of
               (Just (k, v)) -> (k, Just v)
               Nothing -> (zl, Nothing)
-            shouldContinue = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
+            inBounds = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
+            shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex key)
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
     rangeDMap dmap = go dmap zr []
       where
         go :: DMap.Map Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go dmap' p tmp
-          | zl <= p && p <= zr = case DMap.lookup p dmap' of
+          | inBounds && shouldLookup = case DMap.lookup p dmap' of
               Just val -> go dmap' (p - 1) ((fromZIndex' p, val) : tmp)
               Nothing -> go dmap' (p - 1) tmp
+          | inBounds = go dmap' (p - 1) tmp 
           | otherwise = tmp
+          where 
+            inBounds = zl <= p && p <= zr
+            shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
     rangeNS Map.M0 = []
@@ -179,10 +188,14 @@ rangeLookupDummy cl cr qt =
       where
         go :: Map.Chunk Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go ch' p tmp
-          | zl <= p && p <= zr = case Map.lookup1 p ch' Nothing of
+          | inBounds && shouldLookup = case Map.lookup1 p ch' Nothing of
               Just val -> go ch' (p - 1) ((fromZIndex' p, val) : tmp)
               Nothing -> go ch' (p - 1) tmp
+          | shouldLookup = go ch' (p - 1) tmp
           | otherwise = tmp
+          where 
+            inBounds = zl <= p && p <= zr
+            shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookup cl cr qt = []
@@ -211,7 +224,6 @@ rangeLookup cl cr qt = []
               (Just (k, v)) -> (k, Just v)
               Nothing -> (zl, Nothing)
             shouldContinue = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
-        
 
 insertP :: Coords n -> v -> Quadtree v -> Quadtree v
 insertP c v qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}

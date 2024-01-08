@@ -22,15 +22,16 @@ main = do
 
 test1 :: IO ()
 test1 = do
-  let coords1 = PMQ.Coords 0 0
-  let coords2 = PMQ.Coords 1 1
-  let coords3 = PMQ.Coords 3 2
-  let coords4 = PMQ.Coords 4 4
+  let coords1 = PMQ.Coords 5 5
+  let coords2 = PMQ.Coords 9 8
+  let coords3 = PMQ.Coords 6 6
+  let coords4 = PMQ.Coords 15 7
 
   let pmq1 = PMQ.empty
   let pmq2 = PMQ.insertE coords1 "data c1" pmq1
   let pmq3 = PMQ.insertE coords2 "data c2" pmq2
-  let pmq4 = PMQ.insertE coords4 "data c4" pmq3
+  let pmq4 = PMQ.insertE coords3 "data c3" pmq3
+  let pmq5 = PMQ.insertE coords4 "data c4" pmq4
 
   print ("------")
 
@@ -41,10 +42,10 @@ test1 = do
 
   print ("------")
 
-  print (PMQ.getPMAMap pmq4)
+  print (PMQ.getPMAMap pmq5)
 
-  print (PMQ.rangeLookupDummiest coords1 coords4 pmq4)
-  print (PMQ.rangeLookupDummy coords1 coords4 pmq4)
+  print (PMQ.rangeLookupDummiest coords1 coords2 pmq5)
+  print (PMQ.rangeLookupDummy coords1 coords2 pmq5)
 
 test2 :: IO ()
 test2 = do
