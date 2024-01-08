@@ -46,6 +46,7 @@ test1 = do
 
   print (PMQ.rangeLookupDummiest coords1 coords2 pmq5)
   print (PMQ.rangeLookupDummy coords1 coords2 pmq5)
+  print (PMQ.rangeLookup coords1 coords2 pmq5)
 
 test2 :: IO ()
 test2 = do
@@ -60,3 +61,5 @@ test2 = do
   print pmq
   print (PMQ.rangeLookupDummiest l r pmq)
   print (PMQ.rangeLookupDummy l r pmq)
+  print (PMQ.rangeLookup l r pmq)
+

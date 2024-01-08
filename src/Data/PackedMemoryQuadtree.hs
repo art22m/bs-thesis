@@ -19,8 +19,8 @@ import GHC.TypeLits (Nat)
 
 ---- Constants
 
-_MISSES_THRESHOLD :: Integer
-_MISSES_THRESHOLD = 3
+_MISSES_THRESHOLD :: Int
+_MISSES_THRESHOLD = 4
 
 ---- ZIndex
 
@@ -91,6 +91,12 @@ splitRegion (ZIndex l) (ZIndex r)
     isHorizontalSplit = even (countLeadingZeros (xor l r))
     (litMax, bigMin) = if isHorizontalSplit then bounds yl yr else bounds xl xr
 
+-- TODO: delete
+splitRegion' :: Int -> Int -> (Int, Int)
+splitRegion' l r = (nl, nr)
+  where
+    (ZIndex nl, ZIndex nr) = splitRegion (ZIndex l) (ZIndex r)
+
 ---- Data Structure
 
 newtype Quadtree a = Quadtree {getPMAMap :: Map Int a}
@@ -127,10 +133,9 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
           Nothing -> go l (r - 1) pm tmp
       | l <= r = go l (r - 1) pm tmp
       | otherwise = tmp
-      where 
+      where
         shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex r)
 
--- TODO: Add relevance check
 rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookupDummy cl cr qt =
   rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
@@ -170,9 +175,9 @@ rangeLookupDummy cl cr qt =
           | inBounds && shouldLookup = case DMap.lookup p dmap' of
               Just val -> go dmap' (p - 1) ((fromZIndex' p, val) : tmp)
               Nothing -> go dmap' (p - 1) tmp
-          | inBounds = go dmap' (p - 1) tmp 
+          | inBounds = go dmap' (p - 1) tmp
           | otherwise = tmp
-          where 
+          where
             inBounds = zl <= p && p <= zr
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
@@ -193,7 +198,7 @@ rangeLookupDummy cl cr qt =
               Nothing -> go ch' (p - 1) tmp
           | shouldLookup = go ch' (p - 1) tmp
           | otherwise = tmp
-          where 
+          where
             inBounds = zl <= p && p <= zr
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
@@ -205,25 +210,24 @@ rangeLookup cl cr qt = []
 
     pmaMap = getPMAMap qt
 
-    rangePMA :: PMA Int v -> [(Coords n, v)]
-    rangePMA pma = []
+calculateRanges :: Int -> Int -> [(Int, Int)]
+calculateRanges ul br = go ul br ul 0 []
+  where
+    go :: Int -> Int -> Int -> Int -> [(Int, Int)] -> [(Int, Int)]
+    go l r p m tmp -- Upper left, bottom right, current position, misses count, temp. result
+      | inBounds && shouldLookup = go l r (p + 1) 0 tmp
+      | m >= _MISSES_THRESHOLD && (litmax < p && p < bigmin) =
+          go bigmin r bigmin 0 ((l, litmax) : tmp)
+      | m >= _MISSES_THRESHOLD && (p < litmax) =
+          go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
+      | m >= _MISSES_THRESHOLD && (bigmin < p) =
+          [(-1, -1)] -- it should be never happen -- TODO: Check if it possible
+      | inBounds = go l r (p + 1) (m + 1) tmp
+      | otherwise = (l, r) : tmp
       where
-        p' = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
-        pmaPos
-          | p' < 0 = 0
-          | otherwise = p'
-
-        go :: PMA Int v -> Int -> Int -> [(Coords n, v)] -> [(Coords n, v)]
-        go pma' p m tmp
-          | shouldContinue = case mval of
-              Just val -> go pma' (p + 1) 0 ((fromZIndex' key, val) : tmp)
-              Nothing -> go pma' (p + 1) (m + 1) tmp
-          | otherwise = tmp
-          where
-            (key, mval) = case PMA.cells pma' Vector.! p of
-              (Just (k, v)) -> (k, Just v)
-              Nothing -> (zl, Nothing)
-            shouldContinue = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
+        inBounds = l <= p && p <= r
+        shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)
+        (litmax, bigmin) = splitRegion' l r
 
 insertP :: Coords n -> v -> Quadtree v -> Quadtree v
 insertP c v qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}
