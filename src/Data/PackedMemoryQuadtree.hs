@@ -122,11 +122,13 @@ lookup c qt = Map.lookup zid pm
     ZIndex zid = toZIndex c
 
 rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
-  where
-    ZIndex zl = toZIndex cl
-    ZIndex zr = toZIndex cr
+rangeLookupDummy cl cr qt = rangeLookupDummy' (toZIndex cl) (toZIndex cr) qt
 
+rangeLookupDummy' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
+rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt 
+  | zl > zr = rangeLookupDummy' (ZIndex zr) (ZIndex zl) qt
+  | otherwise = go zl zr (getPMAMap qt) []
+  where
     go :: Int -> Int -> Map Int v -> [(Coords n, v)] -> [(Coords n, v)]
     go l r pm tmp
       | l <= r && shouldLookup = case Map.lookup r pm of
@@ -207,10 +209,15 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookup cl cr qt = go qt ranges []
-  where
-    ranges = calculateRanges (toZIndex cl) (toZIndex cr)
+rangeLookup cl cr qt = rangeLookup' (toZIndex cl) (toZIndex cr) qt
 
+rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
+rangeLookup' zl zr qt
+  | zl > zr = rangeLookup' zr zl qt
+  | otherwise = go qt ranges []
+  where
+    ranges = calculateRanges zl zr 
+    -- TODO: Probably call rangeLookupSeq' durion ranges calculation
     go :: Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
     go qt' (r:rs) tmp = rangeLookupSeq' (fst r) (snd r) qt' ++ go qt' rs tmp
     go _ [] tmp = tmp 

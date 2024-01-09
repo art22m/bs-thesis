@@ -1,9 +1,8 @@
 module Main where
 
-import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
-import HaskellSay (haskellSay)
+import Test.QuickCheck
 
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
 generateNPoints n = go 0
@@ -14,11 +13,12 @@ generateNPoints n = go 0
       | otherwise = qt'
 
 main :: IO ()
-main = do
-  putStrLn "start"
-  test1
+main = quickCheck (within 1000000 (withMaxSuccess 1000 testRangeLookup))
+-- main = do
+--   putStrLn "start"
+  -- test1
   -- test2
-  putStrLn "end"
+  -- putStrLn "end"
 
 test1 :: IO ()
 test1 = do
@@ -51,7 +51,6 @@ test1 = do
   print (PMQ.rangeLookupDummy coords1 coords2 pmq5)
   print (PMQ.rangeLookupSeq coords1 coords2 pmq5)
 
-
   print (PMQ.calculateRanges (PMQ.toZIndex coords1) (PMQ.toZIndex coords2))
   print (PMQ.rangeLookup coords1 coords2 pmq5)
 
@@ -73,3 +72,11 @@ test2 = do
   print (PMQ.rangeLookupSeq l r pmq)
   print (PMQ.rangeLookup l r pmq)
 
+testRangeLookup :: Int -> Int -> Bool
+testRangeLookup l r = length (PMQ.rangeLookupDummy zl zr qt) == length (PMQ.rangeLookup zl zr qt)
+  where
+    zl = PMQ.fromZIndex' l
+    zr = PMQ.fromZIndex' r
+
+    -- qt = generateNPoints 1 "t" PMQ.empty
+    qt = PMQ.empty
