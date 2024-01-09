@@ -16,8 +16,8 @@ generateNPoints n = go 0
 main :: IO ()
 main = do
   putStrLn "start"
---   test1
-  test2
+  test1
+  -- test2
   putStrLn "end"
 
 test1 :: IO ()
@@ -35,9 +35,13 @@ test1 = do
 
   print ("------")
 
+  print coords1
   print (PMQ.toZIndex coords1)
+  print coords2
   print (PMQ.toZIndex coords2)
+  print coords3
   print (PMQ.toZIndex coords3)
+  print coords4
   print (PMQ.toZIndex coords4)
 
   print ("------")
@@ -46,7 +50,13 @@ test1 = do
 
   print (PMQ.rangeLookupDummy coords1 coords2 pmq5)
   print (PMQ.rangeLookupSeq coords1 coords2 pmq5)
+
+
+  print (PMQ.calculateRanges (PMQ.toZIndex coords1) (PMQ.toZIndex coords2))
   print (PMQ.rangeLookup coords1 coords2 pmq5)
+
+  print (PMQ.rangeLookupDummy (PMQ.fromZIndex' 192) (PMQ.fromZIndex' 193) pmq5)
+  print (PMQ.rangeLookupSeq' (PMQ.ZIndex 192) (PMQ.ZIndex 193) pmq5)
 
 test2 :: IO ()
 test2 = do

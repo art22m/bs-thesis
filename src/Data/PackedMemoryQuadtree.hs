@@ -16,7 +16,7 @@ import qualified Data.PackedMemoryArrayMap as Map
 import Data.Vector hiding ((++))
 import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
-import Control.Applicative (ZipList)
+import Control.Applicative (ZipList (ZipList))
 
 ---- Constants
 
@@ -53,7 +53,7 @@ bitAt x i = shiftR x i .&. 1
 
 isRelevant :: ZIndex n -> ZIndex n -> ZIndex n -> Bool
 isRelevant minZIndex maxZIndex testZIndex =
-  testX >= minX && testX <= maxX && testY >= minY && testY <= maxY
+  (minX <= testX && testX <= maxX) && (minY <= testY && testY <= maxY)
   where
     Coords minX minY = fromZIndex minZIndex
     Coords maxX maxY = fromZIndex maxZIndex
@@ -141,22 +141,24 @@ rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq cl cr qt = rangeLookupSeq' (toZIndex cl) (toZIndex cr) qt
 
 rangeLookupSeq' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
+rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt 
+  | zl > zr = rangeLookupSeq' (ZIndex zr) (ZIndex zl) qt
+  | otherwise = 
   rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
 
     rangePMA :: PMA Int v -> [(Coords n, v)]
-    rangePMA pma = go pma pmaPos []
+    rangePMA pma = go pma pos []
       where
-        p' = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
-        pmaPos
-          | p' < 0 = 0
-          | otherwise = p'
+        pos' = PMA.binsearch zl (PMA.cells (Map.getPMA (getPMAMap qt)))
+        pos
+          | pos' < 0 = 0
+          | otherwise = pos'
 
         go :: PMA Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go pma' p tmp
-          | inBounds && shouldLookup = case mval of
+          | inBounds && inRange && shouldLookup = case mval of
               Just val -> go pma' (p + 1) ((fromZIndex' key, val) : tmp)
               Nothing -> go pma' (p + 1) tmp
           | inBounds = go pma' (p + 1) tmp
@@ -165,7 +167,8 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
             (key, mval) = case PMA.cells pma' Vector.! p of
               (Just (k, v)) -> (k, Just v)
               Nothing -> (zl, Nothing)
-            inBounds = (0 <= p && p < Vector.length (PMA.cells pma')) && (zl <= key && key <= zr)
+            inBounds = (0 <= p && p < Vector.length (PMA.cells pma')) 
+            inRange = zl <= key && key <= zr
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex key)
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
@@ -173,13 +176,13 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
       where
         go :: DMap.Map Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go dmap' p tmp
-          | inBounds && shouldLookup = case DMap.lookup p dmap' of
+          | inRange && shouldLookup = case DMap.lookup p dmap' of
               Just val -> go dmap' (p - 1) ((fromZIndex' p, val) : tmp)
               Nothing -> go dmap' (p - 1) tmp
-          | inBounds = go dmap' (p - 1) tmp
+          | inRange = go dmap' (p - 1) tmp
           | otherwise = tmp
           where
-            inBounds = zl <= p && p <= zr
+            inRange = zl <= p && p <= zr
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
@@ -190,17 +193,17 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
 
     -- TODO: Rewrite with one binsearch + linear
     rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
-    rangeChunk ch = go ch zr []
+    rangeChunk ch = go ch zl []
       where
         go :: Map.Chunk Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
         go ch' p tmp
-          | inBounds && shouldLookup = case Map.lookup1 p ch' Nothing of
-              Just val -> go ch' (p - 1) ((fromZIndex' p, val) : tmp)
-              Nothing -> go ch' (p - 1) tmp
-          | shouldLookup = go ch' (p - 1) tmp
+          | inRange && shouldLookup = case Map.lookup1 p ch' Nothing of
+              Just val -> go ch' (p + 1) ((fromZIndex' p, val) : tmp)
+              Nothing -> go ch' (p + 1) tmp
+          | inRange = go ch' (p + 1) tmp
           | otherwise = tmp
           where
-            inBounds = zl <= p && p <= zr
+            inRange = zl <= p && p <= zr
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
