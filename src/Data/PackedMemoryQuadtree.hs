@@ -121,8 +121,8 @@ lookup c qt = Map.lookup zid pm
     pm = getPMAMap qt
     ZIndex zid = toZIndex c
 
-rangeLookupDummiest :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
+rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
+rangeLookupDummy cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
   where
     ZIndex zl = toZIndex cl
     ZIndex zr = toZIndex cr
@@ -138,12 +138,12 @@ rangeLookupDummiest cl cr qt = go (min zl zr) (max zl zr) (getPMAMap qt) []
         shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex r)
 
 rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq cl cr qt =
+rangeLookupSeq cl cr qt = rangeLookupSeq' (toZIndex cl) (toZIndex cr) qt
+
+rangeLookupSeq' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
+rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
   rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
   where
-    ZIndex zl = toZIndex cl
-    ZIndex zr = toZIndex cr
-
     pmaMap = getPMAMap qt
 
     rangePMA :: PMA Int v -> [(Coords n, v)]
@@ -209,7 +209,7 @@ rangeLookup cl cr qt = go qt ranges []
     ranges = calculateRanges (toZIndex cl) (toZIndex cr)
 
     go :: Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
-    go qt' (r:rs) tmp = rangeLookupSeq (fromZIndex (fst r)) (fromZIndex (snd r)) qt' ++ go qt' rs tmp
+    go qt' (r:rs) tmp = rangeLookupSeq' (fst r) (snd r) qt' ++ go qt' rs tmp
     go _ [] tmp = tmp 
 
 -- TODO: remove

@@ -44,7 +44,7 @@ test1 = do
 
   print (PMQ.getPMAMap pmq5)
 
-  print (PMQ.rangeLookupDummiest coords1 coords2 pmq5)
+  print (PMQ.rangeLookupDummy coords1 coords2 pmq5)
   print (PMQ.rangeLookupSeq coords1 coords2 pmq5)
   print (PMQ.rangeLookup coords1 coords2 pmq5)
 
@@ -59,7 +59,7 @@ test2 = do
   let r = PMQ.Coords (points_num - 1) (points_num - 1)
 
   print pmq
-  print (PMQ.rangeLookupDummiest l r pmq)
+  print (PMQ.rangeLookupDummy l r pmq)
   print (PMQ.rangeLookupSeq l r pmq)
   print (PMQ.rangeLookup l r pmq)
 
