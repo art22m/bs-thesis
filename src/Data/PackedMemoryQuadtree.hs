@@ -20,7 +20,7 @@ import GHC.TypeLits (Nat)
 ---- Constants
 
 _MISSES_THRESHOLD :: Int
-_MISSES_THRESHOLD = 4
+_MISSES_THRESHOLD = 3
 
 ---- ZIndex
 
@@ -235,11 +235,11 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
     go l r p m tmp -- Upper left, bottom right, current position, misses count, temp. result
       | inBounds && shouldLookup = go l r (p + 1) 0 tmp
       | m >= _MISSES_THRESHOLD && (litmax < p && p < bigmin) =
-          go bigmin r bigmin 0 ((ZIndex l, ZIndex litmax) : tmp)
+          go bigmin r bigmin 0 tmp ++ [(ZIndex l, ZIndex litmax)]
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
-      | m >= _MISSES_THRESHOLD && (bigmin < p) = 
-          go bigmin r p m ((ZIndex l, ZIndex litmax) : tmp)
+      | m >= _MISSES_THRESHOLD && (bigmin < p) = -- 71
+          go bigmin r p m tmp ++ [(ZIndex l, ZIndex litmax)]
       | inBounds = go l r (p + 1) (m + 1) tmp
       | otherwise = (ZIndex l, ZIndex r) : tmp
       where

@@ -4,21 +4,11 @@ import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
 import Test.QuickCheck
 
-generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
-generateNPoints n = go 0
-  where
-    go :: Int -> v -> Quadtree v -> Quadtree v
-    go p v' qt'
-      | p < n = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
-      | otherwise = qt'
-
 main :: IO ()
-main = quickCheck (within 1000000 (withMaxSuccess 1000 testRangeLookup))
--- main = do
---   putStrLn "start"
+main = do
   -- test1
   -- test2
-  -- putStrLn "end"
+  test3
 
 test1 :: IO ()
 test1 = do
@@ -54,23 +44,35 @@ test1 = do
   print (PMQ.calculateRanges (PMQ.toZIndex coords1) (PMQ.toZIndex coords2))
   print (PMQ.rangeLookup coords1 coords2 pmq5)
 
-  print (PMQ.rangeLookupDummy (PMQ.fromZIndex' 192) (PMQ.fromZIndex' 193) pmq5)
-  print (PMQ.rangeLookupSeq' (PMQ.ZIndex 192) (PMQ.ZIndex 193) pmq5)
-
 test2 :: IO ()
 test2 = do
-  let points_num = 15
+  let points_num = 2
 
   let pmqEmpty = PMQ.empty
   let pmq = generateNPoints points_num "t" pmqEmpty
 
-  let l = PMQ.Coords 0 0
-  let r = PMQ.Coords (points_num - 1) (points_num - 1)
+  let zl = PMQ.ZIndex 2
+  let zr = PMQ.ZIndex 104
+
+  let l = PMQ.fromZIndex zl
+  let r = PMQ.fromZIndex zr
 
   print pmq
   print (PMQ.rangeLookupDummy l r pmq)
   print (PMQ.rangeLookupSeq l r pmq)
   print (PMQ.rangeLookup l r pmq)
+  print (PMQ.calculateRanges zl zr)
+
+test3 :: IO ()
+test3 = quickCheck (within 1000000 (withMaxSuccess 50000 testRangeLookup))
+
+generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
+generateNPoints n = go 0
+  where
+    go :: Int -> v -> Quadtree v -> Quadtree v
+    go p v' qt'
+      | p < n = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
+      | otherwise = qt'
 
 testRangeLookup :: Int -> Int -> Bool
 testRangeLookup l r = length (PMQ.rangeLookupDummy zl zr qt) == length (PMQ.rangeLookup zl zr qt)
@@ -78,4 +80,4 @@ testRangeLookup l r = length (PMQ.rangeLookupDummy zl zr qt) == length (PMQ.rang
     zl = PMQ.fromZIndex' l
     zr = PMQ.fromZIndex' r
 
-    qt = generateNPoints 1 "t" PMQ.empty
+    qt = generateNPoints 11 "t" PMQ.empty
