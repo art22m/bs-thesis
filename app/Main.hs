@@ -78,5 +78,4 @@ testRangeLookup l r = length (PMQ.rangeLookupDummy zl zr qt) == length (PMQ.rang
     zl = PMQ.fromZIndex' l
     zr = PMQ.fromZIndex' r
 
-    -- qt = generateNPoints 1 "t" PMQ.empty
-    qt = PMQ.empty
+    qt = generateNPoints 1 "t" PMQ.empty

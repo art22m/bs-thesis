@@ -2,21 +2,19 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Eta reduce" #-}
 
 module Data.PackedMemoryQuadtree where
 
 import Data.Bits
 import Data.List
 import qualified Data.Map as DMap
-import Data.Maybe (fromMaybe)
 import Data.PackedMemoryArray (PMA)
 import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
-import Data.Vector hiding ((++))
 import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
-import Control.Applicative (ZipList (ZipList))
 
 ---- Constants
 
@@ -122,12 +120,13 @@ lookup c qt = Map.lookup zid pm
     ZIndex zid = toZIndex c
 
 rangeLookupDummy :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy cl cr qt = rangeLookupDummy' (toZIndex cl) (toZIndex cr) qt
+rangeLookupDummy (Coords x1 y1) (Coords x2 y2) qt = rangeLookupDummy' (toZIndex cl) (toZIndex cr) qt
+  where
+    cl = Coords (min x1 x2) (min y1 y2)
+    cr = Coords (max x1 x2) (max y1 y2)
 
 rangeLookupDummy' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
-rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt 
-  | zl > zr = rangeLookupDummy' (ZIndex zr) (ZIndex zl) qt
-  | otherwise = go zl zr (getPMAMap qt) []
+rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt = go zl zr (getPMAMap qt) []
   where
     go :: Int -> Int -> Map Int v -> [(Coords n, v)] -> [(Coords n, v)]
     go l r pm tmp
@@ -140,12 +139,13 @@ rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt
         shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex r)
 
 rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq cl cr qt = rangeLookupSeq' (toZIndex cl) (toZIndex cr) qt
+rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq' (toZIndex cl) (toZIndex cr) qt
+  where
+    cl = Coords (min x1 x2) (min y1 y2)
+    cr = Coords (max x1 x2) (max y1 y2)
 
 rangeLookupSeq' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt 
-  | zl > zr = rangeLookupSeq' (ZIndex zr) (ZIndex zl) qt
-  | otherwise = 
+rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
   rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
@@ -169,7 +169,7 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt
             (key, mval) = case PMA.cells pma' Vector.! p of
               (Just (k, v)) -> (k, Just v)
               Nothing -> (zl, Nothing)
-            inBounds = (0 <= p && p < Vector.length (PMA.cells pma')) 
+            inBounds = 0 <= p && p < Vector.length (PMA.cells pma')
             inRange = zl <= key && key <= zr
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex key)
 
@@ -209,12 +209,13 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt
             shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookup cl cr qt = rangeLookup' (toZIndex cl) (toZIndex cr) qt
+rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIndex cr) qt
+  where
+    cl = Coords (min x1 x2) (min y1 y2)
+    cr = Coords (max x1 x2) (max y1 y2)
 
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
-rangeLookup' zl zr qt
-  | zl > zr = rangeLookup' zr zl qt
-  | otherwise = go qt ranges []
+rangeLookup' zl zr qt = go qt ranges []
   where
     ranges = calculateRanges zl zr 
     -- TODO: Probably call rangeLookupSeq' durion ranges calculation
@@ -236,8 +237,7 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
           go bigmin r bigmin 0 ((ZIndex l, ZIndex litmax) : tmp)
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
-      | m >= _MISSES_THRESHOLD && (bigmin < p) =
-          [(ZIndex 0, ZIndex 0)] -- it should be never happen -- TODO: Check if it possible
+      | m >= _MISSES_THRESHOLD && (bigmin < p) = [] -- it should be never happen -- TODO: Check if it possible
       | inBounds = go l r (p + 1) (m + 1) tmp
       | otherwise = (ZIndex l, ZIndex r) : tmp
       where
