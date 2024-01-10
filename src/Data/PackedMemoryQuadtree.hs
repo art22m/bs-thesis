@@ -2,6 +2,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Eta reduce" #-}
 
 module Data.PackedMemoryQuadtree where
@@ -217,11 +218,11 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' zl zr qt = go qt ranges []
   where
-    ranges = calculateRanges zl zr 
+    ranges = calculateRanges zl zr
     -- TODO: Probably call rangeLookupSeq' durion ranges calculation
     go :: Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
-    go qt' (r:rs) tmp = rangeLookupSeq' (fst r) (snd r) qt' ++ go qt' rs tmp
-    go _ [] tmp = tmp 
+    go qt' (r : rs) tmp = rangeLookupSeq' (fst r) (snd r) qt' ++ go qt' rs tmp
+    go _ [] tmp = tmp
 
 -- TODO: remove
 calculateRanges' :: Int -> Int -> [(ZIndex n, ZIndex n)]
@@ -237,7 +238,8 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
           go bigmin r bigmin 0 ((ZIndex l, ZIndex litmax) : tmp)
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
-      | m >= _MISSES_THRESHOLD && (bigmin < p) = [] -- it should be never happen -- TODO: Check if it possible
+      | m >= _MISSES_THRESHOLD && (bigmin < p) = 
+          go bigmin r p m ((ZIndex l, ZIndex bigmin) : tmp)
       | inBounds = go l r (p + 1) (m + 1) tmp
       | otherwise = (ZIndex l, ZIndex r) : tmp
       where
