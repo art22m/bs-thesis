@@ -140,13 +140,13 @@ rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt = go zl zr (getPMAMap qt) []
         shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex r)
 
 rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq' (toZIndex cl) (toZIndex cr) qt
+rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq' zl zr zl zr qt
   where
-    cl = Coords (min x1 x2) (min y1 y2)
-    cr = Coords (max x1 x2) (max y1 y2)
+    zl = toZIndex (Coords (min x1 x2) (min y1 y2))
+    zr = toZIndex (Coords (max x1 x2) (max y1 y2))
 
-rangeLookupSeq' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
+rangeLookupSeq' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
+rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
   rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
@@ -164,7 +164,7 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
           | inBounds && inRange && shouldLookup = case mval of
               Just val -> go pma' (p + 1) ((fromZIndex' key, val) : tmp)
               Nothing -> go pma' (p + 1) tmp
-          | inBounds = go pma' (p + 1) tmp
+          | inBounds = go pma' (p + 1) tmp -- TODO: fix, must work with inRange
           | otherwise = tmp
           where
             (key, mval) = case PMA.cells pma' Vector.! p of
@@ -172,7 +172,7 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
               Nothing -> (zl, Nothing)
             inBounds = 0 <= p && p < Vector.length (PMA.cells pma')
             inRange = zl <= key && key <= zr
-            shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex key)
+            shouldLookup = isRelevant (ZIndex zl') (ZIndex zr') (ZIndex key)
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
     rangeDMap dmap = go dmap zr []
@@ -186,7 +186,7 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
           | otherwise = tmp
           where
             inRange = zl <= p && p <= zr
-            shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
+            shouldLookup = isRelevant (ZIndex zl') (ZIndex zr') (ZIndex p)
 
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
     rangeNS Map.M0 = []
@@ -207,7 +207,7 @@ rangeLookupSeq' (ZIndex zl) (ZIndex zr) qt =
           | otherwise = tmp
           where
             inRange = zl <= p && p <= zr
-            shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex p)
+            shouldLookup = isRelevant (ZIndex zl') (ZIndex zr') (ZIndex p)
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIndex cr) qt
@@ -216,13 +216,13 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
     cr = Coords (max x1 x2) (max y1 y2)
 
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
-rangeLookup' zl zr qt = go qt ranges []
+rangeLookup' zl zr qt = go zl zr qt ranges []
   where
     ranges = calculateRanges zl zr
     -- TODO: Probably call rangeLookupSeq' durion ranges calculation
-    go :: Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
-    go qt' (r : rs) tmp = rangeLookupSeq' (fst r) (snd r) qt' ++ go qt' rs tmp
-    go _ [] tmp = tmp
+    go :: ZIndex n -> ZIndex n -> Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
+    go zl' zr' qt' (r : rs) tmp = rangeLookupSeq' zl' zr' (fst r) (snd r) qt' ++ go zl' zr' qt' rs tmp
+    go _ _ _ [] tmp = tmp
 
 -- TODO: remove
 calculateRanges' :: Int -> Int -> [(ZIndex n, ZIndex n)]
