@@ -239,7 +239,7 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
       | m >= _MISSES_THRESHOLD && (bigmin < p) = 
-          go bigmin r p m ((ZIndex l, ZIndex bigmin) : tmp)
+          go bigmin r p m ((ZIndex l, ZIndex litmax) : tmp)
       | inBounds = go l r (p + 1) (m + 1) tmp
       | otherwise = (ZIndex l, ZIndex r) : tmp
       where
