@@ -8,7 +8,7 @@ import System.Random
 
 main :: IO ()
 main = do
-  points <- randomPositions 3000 10000 10000
+  points <- randomPositions 150000 50000 50000
   -- print points
   let pmq = insertPoints points "test" PMQ.empty
 
@@ -42,9 +42,9 @@ generateNPoints n = go 0
       | otherwise = qt'
 
 _UL :: Int
-_UL = 16763904 -- (4000, 4000)
+_UL = 265077696 -- (15k, 15k) --16763904 -- (4000, 4000)
 _BR :: Int
-_BR = 66007360 -- (7000, 8000)
+_BR = 2049383168 -- (50k, 30k) -- 66007360 -- (7000, 8000)
 
 testLookupEff :: Quadtree v -> Int
 testLookupEff qt = length (PMQ.rangeLookup zl zr qt)
