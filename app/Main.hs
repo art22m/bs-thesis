@@ -71,7 +71,7 @@ test3 = quickCheck (within 1000000 (withMaxSuccess 50000 testRangeLookup))
 
 test4 :: IO()
 test4 = do
-  points <- randomPositions 10 100 100
+  points <- randomPositions 3000 10000 10000
   let pmq = insertPoints points "test" PMQ.empty
   quickCheck (within 1000000 (withMaxSuccess 50000 (testRangeLookup' pmq)))
 

@@ -20,7 +20,7 @@ import GHC.TypeLits (Nat)
 ---- Constants
 
 _MISSES_THRESHOLD :: Int
-_MISSES_THRESHOLD = 50
+_MISSES_THRESHOLD = 30
 
 ---- ZIndex
 

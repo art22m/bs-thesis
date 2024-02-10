@@ -18,7 +18,7 @@ import qualified Data.Map as DMap
 
 
 _THRESHOLD :: Int
-_THRESHOLD = 100
+_THRESHOLD = 50
 
 data Stream a = forall s . Stream (s -> Step a s) s
 
