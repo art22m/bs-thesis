@@ -1,14 +1,17 @@
 module Main where
 
+import Data.List
 import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
 import Test.QuickCheck
+import System.Random
 
 main :: IO ()
 main = do
   -- test1
   -- test2
   test3
+  test4
 
 test1 :: IO ()
 test1 = do
@@ -23,7 +26,7 @@ test1 = do
   let pmq4 = PMQ.insertE coords3 "data c3" pmq3
   let pmq5 = PMQ.insertE coords4 "data c4" pmq4
 
-  print ("------")
+  print "------"
 
   print coords1
   print (PMQ.toZIndex coords1)
@@ -34,7 +37,7 @@ test1 = do
   print coords4
   print (PMQ.toZIndex coords4)
 
-  print ("------")
+  print "------"
 
   print (PMQ.getPMAMap pmq5)
 
@@ -66,6 +69,21 @@ test2 = do
 test3 :: IO ()
 test3 = quickCheck (within 1000000 (withMaxSuccess 50000 testRangeLookup))
 
+test4 :: IO()
+test4 = do
+  points <- randomPositions 1000 1000 1000
+  let pmq = insertPoints points "test" PMQ.empty
+  quickCheck (within 1000000 (withMaxSuccess 50000 (testRangeLookup' pmq)))
+
+randomPositions :: Int -> Int -> Int -> IO[(Int, Int)]
+randomPositions count width height = do
+  gen <- newStdGen
+  return $ take count $ randomRs ((0,0), (width-1,height-1)) gen
+
+insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
+insertPoints ((x, y):points) val qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
+insertPoints [] _ qt = qt
+
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
 generateNPoints n = go 0
   where
@@ -75,9 +93,36 @@ generateNPoints n = go 0
       | otherwise = qt'
 
 testRangeLookup :: Int -> Int -> Bool
-testRangeLookup l r = length (PMQ.rangeLookupDummy zl zr qt) == length (PMQ.rangeLookup zl zr qt)
+testRangeLookup l r = compareResults resl resr
   where
     zl = PMQ.fromZIndex' l
     zr = PMQ.fromZIndex' r
 
     qt = generateNPoints 11 "t" PMQ.empty
+
+    resl = PMQ.rangeLookupDummy zl zr qt
+    resr = PMQ.rangeLookupSeq zl zr qt
+
+testRangeLookup' :: Quadtree v -> (Int -> Int -> Bool)
+testRangeLookup' qt = go
+  where
+    go :: Int -> Int -> Bool
+    go l r = compareResults resl resr
+      where
+        zl = PMQ.fromZIndex' l
+        zr = PMQ.fromZIndex' r
+
+        resl = PMQ.rangeLookupDummy zl zr qt
+        resr = PMQ.rangeLookup zl zr qt
+
+compareResults :: [(PMQ.Coords n, v)] -> [(PMQ.Coords n, v)] -> Bool
+compareResults l r = customEqual (sortBy customCompare l) (sortBy customCompare r)
+  where
+    customEqual :: [(PMQ.Coords n, v)] -> [(PMQ.Coords n, v)] -> Bool
+    customEqual [] [] = True
+    customEqual [] _ = False
+    customEqual _ [] = False
+    customEqual ((x,_):xs) ((y,_):ys) = PMQ.toZIndex x == PMQ.toZIndex y && customEqual xs ys
+
+    customCompare :: (PMQ.Coords n, v) -> (PMQ.Coords n, v) -> Ordering
+    customCompare (x,_) (y,_) = compare (PMQ.toZIndex x) (PMQ.toZIndex y)
