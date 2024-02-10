@@ -210,7 +210,7 @@ rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
             shouldLookup = isRelevant (ZIndex zl') (ZIndex zr') (ZIndex p)
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIndex cr) qt
+rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup'' (toZIndex cl) (toZIndex cr) qt
   where
     cl = Coords (min x1 x2) (min y1 y2)
     cr = Coords (max x1 x2) (max y1 y2)
@@ -223,6 +223,25 @@ rangeLookup' zl zr qt = go zl zr qt ranges []
     go :: ZIndex n -> ZIndex n -> Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
     go zl' zr' qt' (r : rs) tmp = rangeLookupSeq' zl' zr' (fst r) (snd r) qt' ++ go zl' zr' qt' rs tmp
     go _ _ _ [] tmp = tmp
+
+rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
+rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
+  where
+    go :: Quadtree v -> Int -> Int -> Int -> Int -> [(Coords n, v)] -> [(Coords n, v)]
+    go qt' l r p m tmp -- Upper left, bottom right, current position, misses count, temp. result
+      | inBounds && shouldLookup = go qt' l r (p + 1) 0 tmp
+      | m >= _MISSES_THRESHOLD && (litmax < p && p < bigmin) =
+          go qt' bigmin r bigmin 0 tmp ++ rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
+      | m >= _MISSES_THRESHOLD && (p < litmax) =
+          go qt' l litmax p m tmp ++ go qt' bigmin r bigmin 0 tmp
+      | m >= _MISSES_THRESHOLD && (bigmin < p) = -- 71
+          go qt' bigmin r p m tmp ++ rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
+      | inBounds = go qt' l r (p + 1) (m + 1) tmp
+      | otherwise = rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex r) qt' ++ tmp
+      where
+        inBounds = l <= p && p <= r
+        shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)
+        (litmax, bigmin) = splitRegion' l r
 
 -- TODO: remove
 calculateRanges' :: Int -> Int -> [(ZIndex n, ZIndex n)]

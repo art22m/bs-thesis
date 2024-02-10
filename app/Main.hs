@@ -101,7 +101,7 @@ testRangeLookup l r = compareResults resl resr
     qt = generateNPoints 11 "t" PMQ.empty
 
     resl = PMQ.rangeLookupDummy zl zr qt
-    resr = PMQ.rangeLookupSeq zl zr qt
+    resr = PMQ.rangeLookup zl zr qt
 
 testRangeLookup' :: Quadtree v -> (Int -> Int -> Bool)
 testRangeLookup' qt = go
