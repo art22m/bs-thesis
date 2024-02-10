@@ -131,13 +131,13 @@ rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt = go zl zr (getPMAMap qt) []
   where
     go :: Int -> Int -> Map Int v -> [(Coords n, v)] -> [(Coords n, v)]
     go l r pm tmp
-      | l <= r && shouldLookup = case Map.lookup r pm of
-          Just val -> go l (r - 1) pm ((fromZIndex (ZIndex r), val) : tmp)
-          Nothing -> go l (r - 1) pm tmp
-      | l <= r = go l (r - 1) pm tmp
+      | l <= r && shouldLookup = case Map.lookup l pm of
+          Just val -> go (l + 1) r pm ((fromZIndex (ZIndex l), val) : tmp)
+          Nothing -> go (l + 1) r pm tmp
+      | l <= r = go (l + 1) r pm tmp
       | otherwise = tmp
       where
-        shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex r)
+        shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex l)
 
 rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq' zl zr zl zr qt
