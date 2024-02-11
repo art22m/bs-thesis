@@ -8,7 +8,7 @@ import System.Random
 
 main :: IO ()
 main = do
-  points <- randomPositions 150000 50000 50000
+  points <- randomPositions 150000 25000 25000
   -- print points
   let pmq = insertPoints points "test" PMQ.empty
 
@@ -16,7 +16,7 @@ main = do
 
   defaultMain
     [ bgroup
-        "fences tests"
+        "150k 25k 25k 50 50"
         [ bench "Test Eff" $ whnf testLookupEff pmq,
           bench "Test Seq" $ whnf testLookupSeq pmq,
           bench "Test Dummy" $ whnf testLookupDummy pmq
