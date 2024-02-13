@@ -1,5 +1,6 @@
 module Main where
 
+import qualified Data.Map as DMap
 import Data.List
 import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
@@ -11,7 +12,7 @@ main = do
   -- test1
   -- test2
   test3
-  -- test4
+  test4
 
 test1 :: IO ()
 test1 = do
@@ -49,22 +50,11 @@ test1 = do
 
 test2 :: IO ()
 test2 = do
-  let points_num = 2
+  let dmap = DMap.insert 0 'x' DMap.empty     
+  print dmap
+  let b = DMap.split (0) dmap
+  print b
 
-  let pmqEmpty = PMQ.empty
-  let pmq = generateNPoints points_num "t" pmqEmpty
-
-  let zl = PMQ.ZIndex 2
-  let zr = PMQ.ZIndex 104
-
-  let l = PMQ.fromZIndex zl
-  let r = PMQ.fromZIndex zr
-
-  print pmq
-  print (PMQ.rangeLookupDummy l r pmq)
-  print (PMQ.rangeLookupSeq l r pmq)
-  print (PMQ.rangeLookup l r pmq)
-  print (PMQ.calculateRanges zl zr)
 
 test3 :: IO ()
 test3 = quickCheck (within 1000000 (withMaxSuccess 50000 testRangeLookup))
@@ -98,10 +88,10 @@ testRangeLookup l r = compareResults resl resr
     zl = PMQ.fromZIndex' l
     zr = PMQ.fromZIndex' r
 
-    qt = generateNPoints 10001 "t" PMQ.empty
+    qt = generateNPoints 12345 "t" PMQ.empty
 
     resl = PMQ.rangeLookupDummy zl zr qt
-    resr = PMQ.rangeLookup zl zr qt
+    resr = PMQ.rangeLookupSeq zl zr qt
 
 testRangeLookup' :: Quadtree v -> (Int -> Int -> Bool)
 testRangeLookup' qt = go

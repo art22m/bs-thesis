@@ -9,18 +9,35 @@ import qualified GHC.Generics as PMQ
 
 main :: IO ()
 main = do
-  points <- randomPositions 200 800 800
-  -- print points
-  let pmq = insertPoints points "test" PMQ.empty
+  points1 <- randomPositions 10 10000000 10000000
+  points2 <- randomPositions 100 10000000 10000000
+  points3 <- randomPositions 1000 10000000 10000000
+  points4 <- randomPositions 10000 10000000 10000000
+  points5 <- randomPositions 100000 10000000 10000000
+  points6 <- randomPositions 1000000 10000000 10000000
+  points7 <- randomPositions 10000000 10000000 10000000
+  points8 <- randomPositions 100000000 10000000 10000000
 
-  print pmq
+  let pmq1 = insertPoints points1 "test" PMQ.empty
+  let pmq2 = insertPoints points2 "test" PMQ.empty
+  let pmq3 = insertPoints points3 "test" PMQ.empty
+  let pmq4 = insertPoints points4 "test" PMQ.empty
+  let pmq5 = insertPoints points5 "test" PMQ.empty
+  let pmq6 = insertPoints points6 "test" PMQ.empty
+  let pmq7 = insertPoints points7 "test" PMQ.empty
+  let pmq8 = insertPoints points8 "test" PMQ.empty
 
   defaultMain
     [ bgroup
-        "50k 15k 15k 50 50"
-        [ bench "Test Eff" $ whnf testLookupEff pmq,
-          bench "Test Seq" $ whnf testLookupSeq pmq,
-          bench "Test Dummy" $ whnf testLookupDummy pmq
+        "1e7"
+        [ bench "Test 10" $ whnf testLookupSeq pmq1,
+          bench "Test 100" $ whnf testLookupSeq pmq2,
+          bench "Test 1000" $ whnf testLookupSeq pmq3,
+          bench "Test 10_000" $ whnf testLookupSeq pmq4,
+          bench "Test 100_000" $ whnf testLookupSeq pmq5,
+          bench "Test 1_000_000" $ whnf testLookupSeq pmq6,
+          bench "Test 10_000_000" $ whnf testLookupSeq pmq7,
+          bench "Test 100_000_000" $ whnf testLookupSeq pmq8
         ]
     ]
 
@@ -43,9 +60,9 @@ generateNPoints n = go 0
       | otherwise = qt'
 
 _UL :: PMQ.Coords n
-_UL = PMQ.Coords 10 10 -- (5k, 8k) --16763904 -- (4000, 4000)
+_UL = PMQ.Coords 1000 1000 
 _BR :: PMQ.Coords n
-_BR = PMQ.Coords 500 500 -- (10k, 10k) -- 66007360 -- (7000, 8000)
+_BR = PMQ.Coords 400000 600000 
 
 testLookupEff :: Quadtree v -> Int
 testLookupEff qt = length (PMQ.rangeLookup _UL _BR qt)
