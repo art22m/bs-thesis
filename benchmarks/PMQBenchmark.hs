@@ -5,10 +5,11 @@ import Criterion.Main (defaultMain)
 import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
 import System.Random
+import qualified GHC.Generics as PMQ
 
 main :: IO ()
 main = do
-  points <- randomPositions 50000 15000 15000
+  points <- randomPositions 200 800 800
   -- print points
   let pmq = insertPoints points "test" PMQ.empty
 
@@ -25,7 +26,7 @@ main = do
 
 randomPositions :: Int -> Int -> Int -> IO[(Int, Int)]
 randomPositions count width height = do
-  gen <- newStdGen
+  let gen = mkStdGen 12345
   return $ take count $ randomRs ((0,0), (width-1,height-1)) gen
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
@@ -41,25 +42,16 @@ generateNPoints n = go 0
       | p < n && odd p = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
       | otherwise = qt'
 
-_UL :: Int
-_UL = 61825088 -- (5k, 8k) --16763904 -- (4000, 4000)
-_BR :: Int
-_BR = 205456128 -- (10k, 10k) -- 66007360 -- (7000, 8000)
+_UL :: PMQ.Coords n
+_UL = PMQ.Coords 10 10 -- (5k, 8k) --16763904 -- (4000, 4000)
+_BR :: PMQ.Coords n
+_BR = PMQ.Coords 500 500 -- (10k, 10k) -- 66007360 -- (7000, 8000)
 
 testLookupEff :: Quadtree v -> Int
-testLookupEff qt = length (PMQ.rangeLookup zl zr qt)
-  where
-    zl = PMQ.fromZIndex' _UL
-    zr = PMQ.fromZIndex' _BR
+testLookupEff qt = length (PMQ.rangeLookup _UL _BR qt)
 
 testLookupDummy :: Quadtree v -> Int
-testLookupDummy qt = length (PMQ.rangeLookupDummy zl zr qt)
-  where
-    zl = PMQ.fromZIndex' _UL
-    zr = PMQ.fromZIndex' _BR
+testLookupDummy qt = length (PMQ.rangeLookupDummy _UL _BR qt)
 
 testLookupSeq :: Quadtree v -> Int
-testLookupSeq qt = length (PMQ.rangeLookupSeq zl zr qt)
-  where
-    zl = PMQ.fromZIndex' _UL
-    zr = PMQ.fromZIndex' _BR
+testLookupSeq qt = length (PMQ.rangeLookupSeq _UL _BR qt)

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -7,6 +8,7 @@
 
 module Data.PackedMemoryQuadtree where
 
+import System.Random (mkStdGen, randomRs)
 import Data.Bits
 import Data.List
 import qualified Data.Map as DMap
@@ -147,7 +149,10 @@ rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq' zl zr zl zr qt
 
 rangeLookupSeq' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
-  rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
+  []
+  ++ rangePMA (Map.getPMA pmaMap)
+  ++ rangeDMap (Map.getMap pmaMap)
+  ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
 
@@ -178,7 +183,7 @@ rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
     rangeDMap dmap = go dmap zr []
       where
         go :: DMap.Map Int v -> Int -> [(Coords n, v)] -> [(Coords n, v)]
-        go dmap' p tmp
+        go dmap' !p tmp
           | inRange && shouldLookup = case DMap.lookup p dmap' of
               Just val -> go dmap' (p - 1) ((fromZIndex' p, val) : tmp)
               Nothing -> go dmap' (p - 1) tmp
@@ -266,12 +271,28 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
         shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)
         (litmax, bigmin) = splitRegion' l r
 
+-- inserts data persistently
 insertP :: Coords n -> v -> Quadtree v -> Quadtree v
 insertP c v qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}
   where
     ZIndex zid = toZIndex c
 
+-- inserts data ephemerally
 insertE :: Coords n -> v -> Quadtree v -> Quadtree v
 insertE c v qt = Quadtree {getPMAMap = Map.insert zid v (getPMAMap qt)}
   where
     ZIndex zid = toZIndex c
+
+randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
+randomPositions count width height = do
+  let gen = mkStdGen 126735
+  return $ take count $ randomRs ((0,0), (width-1,height-1)) gen
+
+insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
+insertPoints ((x, y):points) val qt = insertPoints points val (insertE (Coords x y) val qt)
+insertPoints [] _ qt = qt
+
+randomPMQ :: Int -> Int -> Int -> IO (Quadtree Int)
+randomPMQ count width height = do
+  positions <- randomPositions count width height
+  return (insertPoints positions 0 empty)
