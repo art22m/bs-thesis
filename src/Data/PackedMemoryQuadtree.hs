@@ -1,5 +1,5 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
@@ -8,7 +8,6 @@
 
 module Data.PackedMemoryQuadtree where
 
-import System.Random (mkStdGen, randomRs)
 import Data.Bits
 import Data.List
 import qualified Data.Map as DMap
@@ -18,7 +17,7 @@ import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
 import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
-import qualified Foreign as Vector
+import System.Random (mkStdGen, randomRs)
 
 ---- Constants
 
@@ -33,11 +32,17 @@ data Coords (n :: Nat) = Coords Int Int
 newtype ZIndex (n :: Nat) = ZIndex Int
   deriving (Eq, Ord, Show)
 
+toZIndex' :: Int -> Int -> ZIndex n
+toZIndex' x y = toZIndex (Coords x y)
+
 toZIndex :: Coords n -> ZIndex n
 toZIndex (Coords x y) = ZIndex val
   where
     shifts = [0 .. finiteBitSize x - 1]
     val = Data.List.foldl' (\acc i -> acc .|. (shiftL (bitAt x i) (2 * i) .|. shiftL (bitAt y i) (2 * i + 1))) 0 shifts
+
+bits' :: Int -> [Int]
+bits' x = reverse [0 .. finiteBitSize x - 1]
 
 fromZIndex' :: Int -> Coords n
 fromZIndex' v = fromZIndex (ZIndex v)
@@ -93,6 +98,24 @@ splitRegion (ZIndex l) (ZIndex r)
 
     isHorizontalSplit = even (countLeadingZeros (xor l r))
     (litMax, bigMin) = if isHorizontalSplit then bounds yl yr else bounds xl xr
+
+nextZIndex' :: Int -> Int -> Int -> Int
+nextZIndex' curr rmin rmax = go 10 rmin rmax 0
+  where
+    go :: Int -> Int -> Int -> Int -> Int
+    go (-1) _ _ bigmin = bigmin
+    go i mn mx bigmin = case (bitAt curr i, bitAt mn i, bitAt mx i) of
+      (0, 0, 0) -> go (i - 1) mn mx bigmin
+      (0, 0, 1) -> go (i - 1) mn mx' bigmin'
+      (0, 1, 0) -> error "This case not possible because MIN <= MAX"
+      (0, 1, 1) -> mn
+      (1, 0, 0) -> bigmin
+      (1, 0, 1) -> go (i - 1) bigmin' mx bigmin
+      (1, 1, 0) -> error "This case not possible because MIN <= MAX"
+      (1, 1, 1) -> go (i - 1) mn mx bigmin
+      (_, _, _) -> error "unexpected values"
+      where
+        (mx', bigmin') = splitRegion' mn mx
 
 -- TODO: delete
 splitRegion' :: Int -> Int -> (Int, Int)
@@ -150,9 +173,9 @@ rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq' zl zr zl zr qt
 rangeLookupSeq' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
   []
-  ++ rangePMA (Map.getPMA pmaMap)
-  ++ rangeDMap (Map.getMap pmaMap)
-  ++ rangeNS (Map.getNS pmaMap)
+    ++ rangePMA (Map.getPMA pmaMap)
+    ++ rangeDMap (Map.getMap pmaMap)
+    ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
 
@@ -160,14 +183,14 @@ rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
     rangePMA pma = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredPMA)
       where
         pmaCells = Vector.catMaybes (PMA.cells pma)
-        filteredPMA = Vector.filter (\(zind,_) -> (zl <= zind && zind <= zr && isRelevant (ZIndex zl') (ZIndex zr') (ZIndex zind))) pmaCells
+        filteredPMA = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant (ZIndex zl') (ZIndex zr') (ZIndex zind))) pmaCells
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
     rangeDMap dmap = map (\(c, v) -> (fromZIndex' c, v)) (DMap.toList filteredMap)
       where
         (_, rmap) = DMap.split (zl - 1) dmap
         (lmap, _) = DMap.split (zr + 1) rmap
-        filteredMap = DMap.filterWithKey (\k _ ->  isRelevant (ZIndex zl') (ZIndex zr') (ZIndex k)) lmap
+        filteredMap = DMap.filterWithKey (\k _ -> isRelevant (ZIndex zl') (ZIndex zr') (ZIndex k)) lmap
 
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
     rangeNS Map.M0 = []
@@ -178,8 +201,7 @@ rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
     rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
     rangeChunk ch = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredVector)
       where
-        filteredVector = Vector.filter (\(zind,_) -> (zl <= zind && zind <= zr && isRelevant (ZIndex zl') (ZIndex zr') (ZIndex zind))) ch
-
+        filteredVector = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant (ZIndex zl') (ZIndex zr') (ZIndex zind))) ch
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup'' (toZIndex cl) (toZIndex cr) qt
@@ -191,7 +213,6 @@ rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' zl zr qt = go zl zr qt ranges []
   where
     ranges = calculateRanges zl zr
-    -- TODO: Probably call rangeLookupSeq' durion ranges calculation
     go :: ZIndex n -> ZIndex n -> Quadtree v -> [(ZIndex n, ZIndex n)] -> [(Coords n, v)] -> [(Coords n, v)]
     go zl' zr' qt' (r : rs) tmp = rangeLookupSeq' zl' zr' (fst r) (snd r) qt' ++ go zl' zr' qt' rs tmp
     go _ _ _ [] tmp = tmp
@@ -206,7 +227,8 @@ rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
           go qt' bigmin r bigmin 0 tmp ++ rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go qt' l litmax p m tmp ++ go qt' bigmin r bigmin 0 tmp
-      | m >= _MISSES_THRESHOLD && (bigmin < p) = -- 71
+      | m >= _MISSES_THRESHOLD && (bigmin < p) -- 71
+        =
           go qt' bigmin r p m tmp ++ rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
       | inBounds = go qt' l r (p + 1) (m + 1) tmp
       | otherwise = rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex r) qt' ++ tmp
@@ -229,7 +251,8 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
           go bigmin r bigmin 0 tmp ++ [(ZIndex l, ZIndex litmax)]
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
-      | m >= _MISSES_THRESHOLD && (bigmin < p) = -- 71
+      | m >= _MISSES_THRESHOLD && (bigmin < p) -- 71
+        =
           go bigmin r p m tmp ++ [(ZIndex l, ZIndex litmax)]
       | inBounds = go l r (p + 1) (m + 1) tmp
       | otherwise = (ZIndex l, ZIndex r) : tmp
@@ -253,10 +276,10 @@ insertE c v qt = Quadtree {getPMAMap = Map.insert zid v (getPMAMap qt)}
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
   let gen = mkStdGen 126735
-  return $ take count $ randomRs ((0,0), (width-1,height-1)) gen
+  return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPoints ((x, y):points) val qt = insertPoints points val (insertE (Coords x y) val qt)
+insertPoints ((x, y) : points) val qt = insertPoints points val (insertE (Coords x y) val qt)
 insertPoints [] _ qt = qt
 
 randomPMQ :: Int -> Int -> Int -> IO (Quadtree String)
