@@ -35,9 +35,7 @@ main = do
           bench "Test 1000" $ whnf testLookupSeq pmq3,
           bench "Test 10_000" $ whnf testLookupSeq pmq4,
           bench "Test 100_000" $ whnf testLookupSeq pmq5,
-          bench "Test 1_000_000" $ whnf testLookupSeq pmq6,
-          bench "Test 10_000_000" $ whnf testLookupSeq pmq7,
-          bench "Test 100_000_000" $ whnf testLookupSeq pmq8
+          bench "Test 1_000_000" $ whnf testLookupSeq pmq6
         ]
     ]
 

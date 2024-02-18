@@ -23,7 +23,7 @@ import qualified Foreign as Vector
 ---- Constants
 
 _MISSES_THRESHOLD :: Int
-_MISSES_THRESHOLD = 200
+_MISSES_THRESHOLD = 4
 
 ---- ZIndex
 
