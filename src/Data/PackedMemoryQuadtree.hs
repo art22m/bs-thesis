@@ -190,7 +190,7 @@ rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
     rangePMA pma = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredPMA)
       where
         pmaCells = Vector.catMaybes (PMA.cells pma)
-        filteredPMA = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant (ZIndex zl') (ZIndex zr') (ZIndex zind))) pmaCells
+        filteredPMA = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant' zl' zr' zind)) pmaCells
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
     rangeDMap dmap = map (\(c, v) -> (fromZIndex' c, v)) (DMap.toList filteredMap)
@@ -218,8 +218,7 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
 
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
-    []
-    ++ rangePMA (Map.getPMA pmaMap)
+    rangePMA (Map.getPMA pmaMap)
     ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
   where
@@ -229,14 +228,14 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
     rangePMA pma = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredPMA)
       where
         pmaCells = Vector.catMaybes (PMA.cells pma)
-        filteredPMA = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant (ZIndex zl') (ZIndex zr') (ZIndex zind))) pmaCells
+        filteredPMA = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant' zl zr zind)) pmaCells
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
     rangeDMap dmap = map (\(c, v) -> (fromZIndex' c, v)) (DMap.toList filteredMap)
       where
         (_, rmap) = DMap.split (zl - 1) dmap
         (lmap, _) = DMap.split (zr + 1) rmap
-        filteredMap = DMap.filterWithKey (\k _ -> isRelevant (ZIndex zl) (ZIndex zr) (ZIndex k)) lmap
+        filteredMap = DMap.filterWithKey (\k _ -> isRelevant' zl zr k) lmap
 
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
     rangeNS Map.M0 = []
@@ -247,7 +246,7 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
     rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
     rangeChunk ch = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredVector)
       where
-        filteredVector = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant (ZIndex zl') (ZIndex zr') (ZIndex zind))) ch
+        filteredVector = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant' zl zr zind)) ch
 
 rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
