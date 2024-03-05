@@ -174,13 +174,16 @@ rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt = go zl zr (getPMAMap qt) []
         shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex l)
 
 rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq' zl zr zl zr qt
+rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq'' zl zr zl zr qt
   where
     zl = toZIndex (Coords (min x1 x2) (min y1 y2))
     zr = toZIndex (Coords (max x1 x2) (max y1 y2))
 
-rangeLookupSeq' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
-rangeLookupSeq' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
+rangeLookupSeq' :: ZIndex n -> ZIndex n ->  Quadtree v -> [(Coords n, v)]
+rangeLookupSeq' zl zr qt = rangeLookupSeq'' zl zr zl zr qt
+
+rangeLookupSeq'' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
+rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
     rangePMA (Map.getPMA pmaMap)
     ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
@@ -289,14 +292,14 @@ rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
     go qt' l r p m tmp -- Upper left, bottom right, current position, misses count, temp. result
       | inBounds && shouldLookup = go qt' l r (p + 1) 0 tmp
       | m >= _MISSES_THRESHOLD && (litmax < p && p < bigmin) =
-          go qt' bigmin r bigmin 0 tmp ++ rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
+          go qt' bigmin r bigmin 0 tmp ++ rangeLookupSeq'' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go qt' l litmax p m tmp ++ go qt' bigmin r bigmin 0 tmp
       | m >= _MISSES_THRESHOLD && (bigmin < p) -- 71
         =
-          go qt' bigmin r p m tmp ++ rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
+          go qt' bigmin r p m tmp ++ rangeLookupSeq'' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
       | inBounds = go qt' l r (p + 1) (m + 1) tmp
-      | otherwise = rangeLookupSeq' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex r) qt' ++ tmp
+      | otherwise = rangeLookupSeq'' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex r) qt' ++ tmp
       where
         inBounds = l <= p && p <= r
         shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)
