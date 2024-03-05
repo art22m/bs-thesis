@@ -16,6 +16,7 @@ import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
 import qualified Data.Vector as Vector hiding ((++))
+import Data.Vector (Vector, (!))
 import GHC.TypeLits (Nat)
 import System.Random (mkStdGen, randomRs)
 
@@ -216,6 +217,18 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
     cl = Coords (min x1 x2) (min y1 y2)
     cr = Coords (max x1 x2) (max y1 y2)
 
+findClosestIndexTest :: Int -> Map.Chunk Int v -> Int -> Int -> Maybe Int
+findClosestIndexTest targetKey vec low high
+    | high < low = if low < Vector.length vec then Just low else error "unexpected values" -- TODO: change to nothing
+    | otherwise =
+        let mid = low + (high - low) `div` 2
+            (midKey, _) = vec ! mid
+        in if midKey == targetKey
+          then Just mid
+          else if midKey < targetKey
+                then findClosestIndexTest targetKey vec (mid + 1) high
+                else findClosestIndexTest targetKey vec low (mid - 1)
+                
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
     rangePMA (Map.getPMA pmaMap)
@@ -237,6 +250,18 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
         (lmap, _) = DMap.split (zr + 1) rmap
         filteredMap = DMap.filterWithKey (\k _ -> isRelevant' zl zr k) lmap
 
+    findClosestIndex :: Int -> Map.Chunk Int v -> Int -> Int -> Maybe Int
+    findClosestIndex targetKey vec low high
+        | high < low = if low < Vector.length vec then Just low else error "unexpected values" -- TODO: change to nothing
+        | otherwise =
+            let mid = low + (high - low) `div` 2
+                (midKey, _) = vec ! mid
+            in if midKey == targetKey
+              then Just mid
+              else if midKey < targetKey
+                    then findClosestIndex targetKey vec (mid + 1) high
+                    else findClosestIndex targetKey vec low (mid - 1)
+                    
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
     rangeNS Map.M0 = []
     rangeNS (Map.M1 as) = rangeChunk as
@@ -244,9 +269,18 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
     rangeNS (Map.M3 as bs cs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeChunk cs ++ rangeNS rest
 
     rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
-    rangeChunk ch = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredVector)
+    rangeChunk ch = go (findClosestIndex zl ch 0 lastIndex) []
       where
-        filteredVector = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant' zl zr zind)) ch
+        lastIndex = Vector.length ch - 1
+        go (Just index) acc
+            | index > lastIndex = acc 
+            | otherwise =
+                let (key, value) = ch ! index
+                in if key > zr then acc 
+                  else if isRelevant' zl zr key
+                        then go (Just (index + 1)) ((fromZIndex' key, value) : acc) 
+                        else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc 
+        go Nothing acc = reverse acc 
 
 rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []

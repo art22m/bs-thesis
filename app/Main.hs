@@ -11,7 +11,7 @@ main :: IO ()
 main = do
   -- test1
   -- test2
-  test3
+  -- test3
   test4
 
 test1 :: IO ()
@@ -85,8 +85,8 @@ generateNPoints n = go 0
 testRangeLookup :: Int -> Int -> Bool
 testRangeLookup l r = compareResults resl resr
   where
-    zl = PMQ.fromZIndex' l
-    zr = PMQ.fromZIndex' r
+    zl = PMQ.fromZIndex' (max 0 l)
+    zr = PMQ.fromZIndex' (max 0 r)
 
     qt = generateNPoints 12345 "t" PMQ.empty
 
