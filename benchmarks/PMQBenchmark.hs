@@ -21,6 +21,9 @@ main = do
   points10 <- randomPositions 10000000000 10000000 10000000
   points11 <- randomPositions 100000000000 10000000 10000000
   points12 <- randomPositions 1000000000000 10000000 10000000
+  points13 <- randomPositions 10000000000000 10000000 10000000
+  points14 <- randomPositions 100000000000000 10000000 10000000
+  points15 <- randomPositions 1000000000000000 10000000 10000000
 
   let pmq1 = insertPoints points1 "test" PMQ.empty
   let pmq2 = insertPoints points2 "test" PMQ.empty
@@ -34,6 +37,9 @@ main = do
   let pmq10 = insertPoints points10 "test" PMQ.empty
   let pmq11 = insertPoints points11 "test" PMQ.empty
   let pmq12 = insertPoints points12 "test" PMQ.empty
+  let pmq13 = insertPoints points13 "test" PMQ.empty
+  let pmq14 = insertPoints points14 "test" PMQ.empty
+  let pmq15 = insertPoints points15 "test" PMQ.empty
 
   defaultMain
     [ bgroup
@@ -61,7 +67,13 @@ main = do
           bench "Test 100_000_000_000 seq" $ whnf testLookupSeq pmq11,
           bench "Test 100_000_000_000 eff" $ whnf testLookupEff pmq11,
           bench "Test 1_000_000_000_000 seq" $ whnf testLookupSeq pmq12,
-          bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff pmq12
+          bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff pmq12,
+          bench "Test 10_000_000_000_000 seq" $ whnf testLookupSeq pmq13,
+          bench "Test 10_000_000_000_000 eff" $ whnf testLookupEff pmq13,
+          bench "Test 100_000_000_000_000 seq" $ whnf testLookupSeq pmq14,
+          bench "Test 100_000_000_000_000 eff" $ whnf testLookupEff pmq14,
+          bench "Test 1_000_000_000_000_000 seq" $ whnf testLookupSeq pmq15,
+          bench "Test 1_000_000_000_000_000 eff" $ whnf testLookupEff pmq15
         ]
     ]
 
