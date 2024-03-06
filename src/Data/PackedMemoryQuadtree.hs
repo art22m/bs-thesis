@@ -108,19 +108,22 @@ splitRegion (ZIndex l) (ZIndex r)
     isHorizontalSplit = even (countLeadingZeros (xor l r))
     (litMax, bigMin) = if isHorizontalSplit then bounds yl yr else bounds xl xr
 
+fbs :: Int -> Int 
+fbs x = finiteBitSize x 
+
 nextZIndex' :: Int -> Int -> Int -> Int
-nextZIndex' curr rmin rmax = go 10 rmin rmax 0
+nextZIndex' curr rmin rmax = go (finiteBitSize curr) rmin rmax 0
   where
     go :: Int -> Int -> Int -> Int -> Int
     go (-1) _ _ bigmin = bigmin
     go i mn mx bigmin = case (bitAt curr i, bitAt mn i, bitAt mx i) of
       (0, 0, 0) -> go (i - 1) mn mx bigmin
       (0, 0, 1) -> go (i - 1) mn mx' bigmin'
-      (0, 1, 0) -> error "This case not possible because MIN <= MAX"
+      (0, 1, 0) -> error $ "This case not possible because MIN <= MAX. i: " ++ show i ++ ", curr: " ++ show curr ++ ", mn: " ++ show mn ++ ", mx: " ++ show mx ++ ", bigmin: " ++ show bigmin
       (0, 1, 1) -> mn
       (1, 0, 0) -> bigmin
       (1, 0, 1) -> go (i - 1) bigmin' mx bigmin
-      (1, 1, 0) -> error "This case not possible because MIN <= MAX"
+      (1, 1, 0) -> error $ "This case not possible because MIN <= MAX. i: " ++ show i ++ ", curr: " ++ show curr ++ ", mn: " ++ show mn ++ ", mx: " ++ show mx ++ ", bigmin: " ++ show bigmin
       (1, 1, 1) -> go (i - 1) mn mx bigmin
       (_, _, _) -> error "unexpected values"
       where

@@ -30,12 +30,18 @@ main = do
   defaultMain
     [ bgroup
         "1e7"
-        [ bench "Test 10" $ whnf testLookupSeq pmq1,
-          bench "Test 100" $ whnf testLookupSeq pmq2,
-          bench "Test 1000" $ whnf testLookupSeq pmq3,
-          bench "Test 10_000" $ whnf testLookupSeq pmq4,
-          bench "Test 100_000" $ whnf testLookupSeq pmq5,
-          bench "Test 1_000_000" $ whnf testLookupSeq pmq6
+        [ bench "Test 10 seq" $ whnf testLookupSeq pmq1,
+          bench "Test 10 eff" $ whnf testLookupEff pmq1,
+          bench "Test 100 seq" $ whnf testLookupSeq pmq2,
+          bench "Test 100 eff" $ whnf testLookupEff pmq2,
+          bench "Test 1000 seq" $ whnf testLookupSeq pmq3,
+          bench "Test 1000 eff" $ whnf testLookupEff pmq3,
+          bench "Test 10_000 seq" $ whnf testLookupSeq pmq4,
+          bench "Test 10_000 eff" $ whnf testLookupEff pmq4,
+          bench "Test 100_000 seq" $ whnf testLookupSeq pmq5,
+          bench "Test 100_000 eff" $ whnf testLookupEff pmq5,
+          bench "Test 1_000_000 seq" $ whnf testLookupSeq pmq6,
+          bench "Test 1_000_000 eff" $ whnf testLookupEff pmq6
         ]
     ]
 
