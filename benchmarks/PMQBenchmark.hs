@@ -17,6 +17,10 @@ main = do
   points6 <- randomPositions 1000000 10000000 10000000
   points7 <- randomPositions 10000000 10000000 10000000
   points8 <- randomPositions 100000000 10000000 10000000
+  points9 <- randomPositions 1000000000 10000000 10000000
+  points10 <- randomPositions 10000000000 10000000 10000000
+  points11 <- randomPositions 100000000000 10000000 10000000
+  points12 <- randomPositions 1000000000000 10000000 10000000
 
   let pmq1 = insertPoints points1 "test" PMQ.empty
   let pmq2 = insertPoints points2 "test" PMQ.empty
@@ -26,6 +30,10 @@ main = do
   let pmq6 = insertPoints points6 "test" PMQ.empty
   let pmq7 = insertPoints points7 "test" PMQ.empty
   let pmq8 = insertPoints points8 "test" PMQ.empty
+  let pmq9 = insertPoints points9 "test" PMQ.empty
+  let pmq10 = insertPoints points10 "test" PMQ.empty
+  let pmq11 = insertPoints points11 "test" PMQ.empty
+  let pmq12 = insertPoints points12 "test" PMQ.empty
 
   defaultMain
     [ bgroup
@@ -41,7 +49,19 @@ main = do
           bench "Test 100_000 seq" $ whnf testLookupSeq pmq5,
           bench "Test 100_000 eff" $ whnf testLookupEff pmq5,
           bench "Test 1_000_000 seq" $ whnf testLookupSeq pmq6,
-          bench "Test 1_000_000 eff" $ whnf testLookupEff pmq6
+          bench "Test 1_000_000 eff" $ whnf testLookupEff pmq6,
+          bench "Test 10_000_000 seq" $ whnf testLookupSeq pmq7,
+          bench "Test 10_000_000 eff" $ whnf testLookupEff pmq7,
+          bench "Test 100_000_000 seq" $ whnf testLookupSeq pmq8,
+          bench "Test 100_000_000 eff" $ whnf testLookupEff pmq8,
+          bench "Test 1_000_000_000 seq" $ whnf testLookupSeq pmq9,
+          bench "Test 1_000_000_000 eff" $ whnf testLookupEff pmq9,
+          bench "Test 10_000_000_000 seq" $ whnf testLookupSeq pmq10,
+          bench "Test 10_000_000_000 eff" $ whnf testLookupEff pmq10,
+          bench "Test 100_000_000_000 seq" $ whnf testLookupSeq pmq11,
+          bench "Test 100_000_000_000 eff" $ whnf testLookupEff pmq11,
+          bench "Test 1_000_000_000_000 seq" $ whnf testLookupSeq pmq12,
+          bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff pmq12
         ]
     ]
 
