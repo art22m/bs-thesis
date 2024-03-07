@@ -96,9 +96,9 @@ generateNPoints n = go 0
       | otherwise = qt'
 
 _UL :: PMQ.Coords n
-_UL = PMQ.Coords 1000 1000 
+_UL = PMQ.Coords 1000 1000 -- 1047744
 _BR :: PMQ.Coords n
-_BR = PMQ.Coords 400000 600000 
+_BR = PMQ.Coords 400000 600000 -- 644403355648
 
 testLookupEff :: Quadtree v -> Int
 testLookupEff qt = length (PMQ.rangeLookup _UL _BR qt)

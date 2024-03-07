@@ -16,7 +16,7 @@ import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
 import qualified Data.Vector as Vector hiding ((++))
-import Data.Vector (Vector, (!))
+import Data.Vector ((!))
 import GHC.TypeLits (Nat)
 import System.Random (mkStdGen, randomRs)
 
@@ -237,10 +237,11 @@ findClosestIndexTest targetKey vec low high
                 
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
-    rangePMA (Map.getPMA pmaMap)
+    []
+    ++ rangePMA (Map.getPMA pmaMap)
     ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
-  where
+  where 
     pmaMap = getPMAMap qt
 
     rangePMA :: PMA Int v -> [(Coords n, v)]
@@ -258,7 +259,7 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
 
     findClosestIndex :: Int -> Map.Chunk Int v -> Int -> Int -> Maybe Int
     findClosestIndex targetKey vec low high
-        | high < low = if low < Vector.length vec then Just low else error "unexpected values" -- TODO: change to nothing
+        | high < low = if low < Vector.length vec then Just low else Nothing
         | otherwise =
             let mid = low + (high - low) `div` 2
                 (midKey, _) = vec ! mid
@@ -286,7 +287,7 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
                   else if isRelevant' zl zr key
                         then go (Just (index + 1)) ((fromZIndex' key, value) : acc) 
                         else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc 
-        go Nothing acc = reverse acc 
+        go Nothing acc = acc 
 
 rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
