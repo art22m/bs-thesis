@@ -15,8 +15,8 @@ import Data.PackedMemoryArray (PMA)
 import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
-import qualified Data.Vector as Vector hiding ((++))
 import Data.Vector ((!))
+import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
 import System.Random (mkStdGen, randomRs)
 
@@ -108,8 +108,8 @@ splitRegion (ZIndex l) (ZIndex r)
     isHorizontalSplit = even (countLeadingZeros (xor l r))
     (litMax, bigMin) = if isHorizontalSplit then bounds yl yr else bounds xl xr
 
-fbs :: Int -> Int 
-fbs x = finiteBitSize x 
+fbs :: Int -> Int
+fbs x = finiteBitSize x
 
 nextZIndex' :: Int -> Int -> Int -> Int
 nextZIndex' curr rmin rmax = go (finiteBitSize curr) rmin rmax 0
@@ -182,12 +182,12 @@ rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq'' zl zr zl zr q
     zl = toZIndex (Coords (min x1 x2) (min y1 y2))
     zr = toZIndex (Coords (max x1 x2) (max y1 y2))
 
-rangeLookupSeq' :: ZIndex n -> ZIndex n ->  Quadtree v -> [(Coords n, v)]
+rangeLookupSeq' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq' zl zr qt = rangeLookupSeq'' zl zr zl zr qt
 
 rangeLookupSeq'' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
-    rangePMA (Map.getPMA pmaMap)
+  rangePMA (Map.getPMA pmaMap)
     ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
   where
@@ -223,25 +223,13 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
     cl = Coords (min x1 x2) (min y1 y2)
     cr = Coords (max x1 x2) (max y1 y2)
 
-findClosestIndexTest :: Int -> Map.Chunk Int v -> Int -> Int -> Maybe Int
-findClosestIndexTest targetKey vec low high
-    | high < low = if low < Vector.length vec then Just low else error "unexpected values" -- TODO: change to nothing
-    | otherwise =
-        let mid = low + (high - low) `div` 2
-            (midKey, _) = vec ! mid
-        in if midKey == targetKey
-          then Just mid
-          else if midKey < targetKey
-                then findClosestIndexTest targetKey vec (mid + 1) high
-                else findClosestIndexTest targetKey vec low (mid - 1)
-                
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
-    []
+  []
     ++ rangePMA (Map.getPMA pmaMap)
     ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
-  where 
+  where
     pmaMap = getPMAMap qt
 
     rangePMA :: PMA Int v -> [(Coords n, v)]
@@ -259,16 +247,17 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
 
     findClosestIndex :: Int -> Map.Chunk Int v -> Int -> Int -> Maybe Int
     findClosestIndex targetKey vec low high
-        | high < low = if low < Vector.length vec then Just low else Nothing
-        | otherwise =
-            let mid = low + (high - low) `div` 2
-                (midKey, _) = vec ! mid
-            in if midKey == targetKey
-              then Just mid
-              else if midKey < targetKey
+      | high < low = if low < Vector.length vec then Just low else Nothing
+      | otherwise =
+          let mid = low + (high - low) `div` 2
+              (midKey, _) = vec ! mid
+           in if midKey == targetKey
+                then Just mid
+                else
+                  if midKey < targetKey
                     then findClosestIndex targetKey vec (mid + 1) high
                     else findClosestIndex targetKey vec low (mid - 1)
-                    
+
     rangeNS :: Map.NS Int v -> [(Coords n, v)]
     rangeNS Map.M0 = []
     rangeNS (Map.M1 as) = rangeChunk as
@@ -280,14 +269,16 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
       where
         lastIndex = Vector.length ch - 1
         go (Just index) acc
-            | index > lastIndex = acc 
-            | otherwise =
-                let (key, value) = ch ! index
-                in if key > zr then acc 
-                  else if isRelevant' zl zr key
-                        then go (Just (index + 1)) ((fromZIndex' key, value) : acc) 
-                        else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc 
-        go Nothing acc = acc 
+          | index > lastIndex = acc
+          | otherwise =
+              let (key, value) = ch ! index
+               in if key > zr
+                    then acc
+                    else
+                      if isRelevant' zl zr key
+                        then go (Just (index + 1)) ((fromZIndex' key, value) : acc)
+                        else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc
+        go Nothing acc = acc
 
 rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
@@ -309,7 +300,6 @@ rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
         shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)
         (litmax, bigmin) = splitRegion' l r
 
--- TODO: remove
 calculateRanges' :: Int -> Int -> [(ZIndex n, ZIndex n)]
 calculateRanges' ul br = calculateRanges (ZIndex ul) (ZIndex br)
 
@@ -323,8 +313,7 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
           go bigmin r bigmin 0 tmp ++ [(ZIndex l, ZIndex litmax)]
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go l litmax p m tmp ++ go bigmin r bigmin 0 tmp
-      | m >= _MISSES_THRESHOLD && (bigmin < p) -- 71
-        =
+      | m >= _MISSES_THRESHOLD && (bigmin < p) =
           go bigmin r p m tmp ++ [(ZIndex l, ZIndex litmax)]
       | inBounds = go l r (p + 1) (m + 1) tmp
       | otherwise = (ZIndex l, ZIndex r) : tmp
