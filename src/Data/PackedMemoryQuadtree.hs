@@ -15,7 +15,7 @@ import Data.PackedMemoryArray (PMA)
 import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
-import Data.Vector ((!))
+import Data.Vector (Vector, (!))
 import qualified Data.Vector as Vector hiding ((++))
 import GHC.TypeLits (Nat)
 import System.Random (mkStdGen, randomRs)
@@ -226,12 +226,30 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
   []
-    ++ rangePMA (Map.getPMA pmaMap)
-    ++ rangeDMap (Map.getMap pmaMap)
+    -- ++ rangePMA (Map.getPMA pmaMap)
+    -- ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
 
+    findClosestJust :: Vector (Maybe (Int, v)) -> Int -> Maybe Int
+    findClosestJust vec index
+      | index < 0 = Nothing
+      | otherwise = case vec ! index of
+          Just _ -> Just index
+          Nothing -> findClosestJust vec (index - 1)
+
+    findStartIndex :: Int -> Vector (Maybe (Int, v)) -> Int -> Int -> Maybe Int
+    findStartIndex targetKey vec low high
+      | high < low = findClosestJust vec low
+      | otherwise =
+          let mid = low + (high - low) `div` 2
+          in case vec ! mid of
+              Nothing -> findClosestJust vec targetKey
+              Just (midKey, _)
+                | midKey < targetKey -> findStartIndex targetKey vec (mid + 1) high
+                | otherwise -> findStartIndex targetKey vec low (mid - 1)
+                    
     rangePMA :: PMA Int v -> [(Coords n, v)]
     rangePMA pma = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredPMA)
       where
@@ -269,16 +287,15 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
       where
         lastIndex = Vector.length ch - 1
         go (Just index) acc
-          | index > lastIndex = acc
+          | index > lastIndex = reverse acc
           | otherwise =
               let (key, value) = ch ! index
-               in if key > zr
-                    then acc
-                    else
-                      if isRelevant' zl zr key
-                        then go (Just (index + 1)) ((fromZIndex' key, value) : acc)
-                        else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc
-        go Nothing acc = acc
+              in if key > zr
+                  then reverse acc
+                  else if isRelevant' zl zr key
+                      then go (Just (index + 1)) (acc)
+                      else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc
+        go Nothing acc = reverse acc
 
 rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
