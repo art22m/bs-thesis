@@ -4,6 +4,7 @@
 
 {-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -Wall -fdefer-typed-holes #-}
+{-# LANGUAGE InstanceSigs #-}
 module Data.PackedMemoryArrayMap where
 
 
@@ -59,10 +60,10 @@ dumpStream m = m { getPMA = insertStream (inputStream m) (getPMA m)
 insertStream :: (Ord k) => Stream (k,a) -> PMA k a -> PMA k a
 insertStream stream pma = PMA.fromList . toList_s $ stream
 
-data Map k a = Map { getNS     :: NS k a
-                   , getNsSize :: Int
-                   , getPMA    :: PMA k a
-                   , getMap    :: DMap.Map k a
+data Map k a = Map { getNS     :: !(NS k a)
+                   , getNsSize :: !Int
+                   , getPMA    :: !(PMA k a)
+                   , getMap    :: !(DMap.Map k a)
                    , inputStream :: Stream (k,a)
                    } deriving Show
 
@@ -74,12 +75,37 @@ data NS k a = M0
             | M2 !(Vector (k, a)) !(Vector (k, a)) (Vector (k, a)) !(NS k a)
             | M3 !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) (Vector (k, a)) !(NS k a)
 
+-- instance (Show k, Show a) => Show (NS k a) where
+--     show ns = reverse $ go ns [] where
+--       go :: (Show k, Show a) => NS k a -> String -> String
+--       go M0 acc = '0' : ' ' : acc
+--       go (M1 as) acc = let res = '1' : ' ' : (show $ length as) ++ " " ++ acc in res `seq` res
+--       go (M2 as bs _ m) acc = let res = go m $ '2' : ' ' : (show $ length as) ++ " " ++ (show $ length bs) ++ " " ++ acc in res `seq` res
+--       go (M3 as bs cs _ m) acc = let res = go m $ '3' : ' ' : (show $ length as) ++ " " ++ (show $ length bs) ++ " " ++ (show $ length cs) ++ " " ++ acc in res `seq` res
+
+-- ---------- ---------- ---------- ---------- ---------- --------
+
 instance (Show k, Show a) => Show (NS k a) where
   show (M0)              = "0 "
-  show (M1 as)           = "1 " ++ show as ++ " "
-  show (M2 as bs _ m)    = "2 " ++ show as ++ " " ++ show bs ++ " " ++ show m
-  show (M3 as bs cs _ m) = "3 " ++ show as ++ " " ++ show bs ++ " " ++ show cs ++ " " ++ show m
+  show (M1 as)           = "1 " ++ show (length as) ++ " "
+  show (M2 as bs _ m)    = "2 " ++ show (length as) ++ " " ++ show (length bs) ++ " " ++ show m
+  show (M3 as bs cs _ m) = "3 " ++ show (length as) ++ " " ++ show (length bs) ++ " " ++ show (length cs) ++ " " ++ show m
 
+-- ---------- ---------- ---------- ---------- ---------- --------
+
+-- showChunks :: (Show k, Show a) => NS k a -> [String] -> [String]
+-- showChunks M0 !acc = "0 " : acc
+-- showChunks (M1 as) !acc = ("1 " ++ show (length as) ++ " ") : acc
+-- showChunks (M2 as bs _ m) !acc = p `seq` showChunks m p
+--   where
+--     p = ("2 " ++ show (length as) ++ " " ++ show (length bs) ++ " ") : acc
+-- showChunks (M3 as bs cs _ m) !acc = p `seq` showChunks m p
+--   where 
+--     p = ("3 " ++ show (length as) ++ " " ++ show (length bs) ++ " " ++ show (length cs) ++ " ") : acc
+
+-- instance (Show k, Show a) => Show (NS k a) where
+--   show :: (Show k, Show a) => NS k a -> String
+--   show ns = concat (showChunks ns [])
 
 null :: Map k v -> Bool
 null m = DMap.null (getMap m) && PMA.null (getPMA m) && nullNS (getNS m)

@@ -226,8 +226,8 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
   []
-    -- ++ rangePMA (Map.getPMA pmaMap)
-    -- ++ rangeDMap (Map.getMap pmaMap)
+    ++ rangePMA (Map.getPMA pmaMap)
+    ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
@@ -283,19 +283,20 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
     rangeNS (Map.M3 as bs cs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeChunk cs ++ rangeNS rest
 
     rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
-    rangeChunk ch = go (findClosestIndex zl ch 0 lastIndex) []
+    rangeChunk ch = go (Just 0) []
       where
         lastIndex = Vector.length ch - 1
         go (Just index) acc
-          | index > lastIndex = reverse acc
+          | index > lastIndex = acc
           | otherwise =
               let (key, value) = ch ! index
-              in if key > zr
-                  then reverse acc
-                  else if isRelevant' zl zr key
-                      then go (Just (index + 1)) (acc)
-                      else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc
-        go Nothing acc = reverse acc
+               in if key > zr
+                    then acc
+                    else
+                      if isRelevant' zl zr key
+                        then go (Just (index + 1)) ((fromZIndex' key, value) : acc)
+                        else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc
+        go Nothing acc = acc
 
 rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
@@ -357,7 +358,7 @@ randomPositions count width height = do
   return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPoints ((x, y) : points) val qt = insertPoints points val (insertE (Coords x y) val qt)
+insertPoints ((x, y) : points) val !qt = insertPoints points val (insertE (Coords x y) val qt)
 insertPoints [] _ qt = qt
 
 randomPMQ :: Int -> Int -> Int -> IO (Quadtree String)

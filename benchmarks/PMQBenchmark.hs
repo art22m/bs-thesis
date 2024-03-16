@@ -57,23 +57,23 @@ main = do
           bench "Test 1_000_000 seq" $ whnf testLookupSeq pmq6,
           bench "Test 1_000_000 eff" $ whnf testLookupEff pmq6,
           bench "Test 10_000_000 seq" $ whnf testLookupSeq pmq7,
-          bench "Test 10_000_000 eff" $ whnf testLookupEff pmq7,
-          bench "Test 100_000_000 seq" $ whnf testLookupSeq pmq8,
-          bench "Test 100_000_000 eff" $ whnf testLookupEff pmq8,
-          bench "Test 1_000_000_000 seq" $ whnf testLookupSeq pmq9,
-          bench "Test 1_000_000_000 eff" $ whnf testLookupEff pmq9,
-          bench "Test 10_000_000_000 seq" $ whnf testLookupSeq pmq10,
-          bench "Test 10_000_000_000 eff" $ whnf testLookupEff pmq10,
-          bench "Test 100_000_000_000 seq" $ whnf testLookupSeq pmq11,
-          bench "Test 100_000_000_000 eff" $ whnf testLookupEff pmq11,
-          bench "Test 1_000_000_000_000 seq" $ whnf testLookupSeq pmq12,
-          bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff pmq12,
-          bench "Test 10_000_000_000_000 seq" $ whnf testLookupSeq pmq13,
-          bench "Test 10_000_000_000_000 eff" $ whnf testLookupEff pmq13,
-          bench "Test 100_000_000_000_000 seq" $ whnf testLookupSeq pmq14,
-          bench "Test 100_000_000_000_000 eff" $ whnf testLookupEff pmq14,
-          bench "Test 1_000_000_000_000_000 seq" $ whnf testLookupSeq pmq15,
-          bench "Test 1_000_000_000_000_000 eff" $ whnf testLookupEff pmq15
+          bench "Test 10_000_000 eff" $ whnf testLookupEff pmq7
+          -- bench "Test 100_000_000 seq" $ whnf testLookupSeq pmq8,
+          -- bench "Test 100_000_000 eff" $ whnf testLookupEff pmq8
+          -- bench "Test 1_000_000_000 seq" $ whnf testLookupSeq pmq9,
+          -- bench "Test 1_000_000_000 eff" $ whnf testLookupEff pmq9,
+          -- bench "Test 10_000_000_000 seq" $ whnf testLookupSeq pmq10,
+          -- bench "Test 10_000_000_000 eff" $ whnf testLookupEff pmq10,
+          -- bench "Test 100_000_000_000 seq" $ whnf testLookupSeq pmq11,
+          -- bench "Test 100_000_000_000 eff" $ whnf testLookupEff pmq11,
+          -- bench "Test 1_000_000_000_000 seq" $ whnf testLookupSeq pmq12,
+          -- bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff pmq12,
+          -- bench "Test 10_000_000_000_000 seq" $ whnf testLookupSeq pmq13,
+          -- bench "Test 10_000_000_000_000 eff" $ whnf testLookupEff pmq13,
+          -- bench "Test 100_000_000_000_000 seq" $ whnf testLookupSeq pmq14,
+          -- bench "Test 100_000_000_000_000 eff" $ whnf testLookupEff pmq14,
+          -- bench "Test 1_000_000_000_000_000 seq" $ whnf testLookupSeq pmq15,
+          -- bench "Test 1_000_000_000_000_000 eff" $ whnf testLookupEff pmq15
         ]
     ]
 
