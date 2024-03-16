@@ -342,15 +342,21 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
 
 -- inserts data persistently
 insertP :: Coords n -> v -> Quadtree v -> Quadtree v
-insertP c v qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}
+insertP c v !qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}
   where
     ZIndex zid = toZIndex c
 
+insertP' :: ZIndex n -> v -> Quadtree v -> Quadtree v
+insertP' (ZIndex zid) v !qt = Quadtree {getPMAMap = Map.insertP zid v (getPMAMap qt)}
+
 -- inserts data ephemerally
 insertE :: Coords n -> v -> Quadtree v -> Quadtree v
-insertE c v qt = Quadtree {getPMAMap = Map.insert zid v (getPMAMap qt)}
+insertE c v !qt = Quadtree {getPMAMap = Map.insert zid v (getPMAMap qt)}
   where
     ZIndex zid = toZIndex c
+
+insertE' :: ZIndex n -> v -> Quadtree v -> Quadtree v
+insertE' (ZIndex zid) v !qt = Quadtree {getPMAMap = Map.insertE zid v (getPMAMap qt)}
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
@@ -358,7 +364,7 @@ randomPositions count width height = do
   return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPoints ((x, y) : points) val !qt = insertPoints points val (insertE (Coords x y) val qt)
+insertPoints ((x, y) : points) val !qt = insertPoints points val (insertP' (toZIndex' x y) val qt)
 insertPoints [] _ qt = qt
 
 randomPMQ :: Int -> Int -> Int -> IO (Quadtree String)
