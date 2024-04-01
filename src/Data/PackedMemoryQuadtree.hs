@@ -360,7 +360,7 @@ insertE' (ZIndex zid) v !qt = Quadtree {getPMAMap = Map.insertE zid v (getPMAMap
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
-  let gen = mkStdGen 126735
+  let gen = mkStdGen 42
   return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v

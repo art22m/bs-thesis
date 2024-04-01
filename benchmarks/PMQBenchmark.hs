@@ -57,9 +57,9 @@ main = do
           bench "Test 1_000_000 seq" $ whnf testLookupSeq pmq6,
           bench "Test 1_000_000 eff" $ whnf testLookupEff pmq6,
           bench "Test 10_000_000 seq" $ whnf testLookupSeq pmq7,
-          bench "Test 10_000_000 eff" $ whnf testLookupEff pmq7
-          -- bench "Test 100_000_000 seq" $ whnf testLookupSeq pmq8,
-          -- bench "Test 100_000_000 eff" $ whnf testLookupEff pmq8
+          bench "Test 10_000_000 eff" $ whnf testLookupEff pmq7,
+          bench "Test 100_000_000 seq" $ whnf testLookupSeq pmq8,
+          bench "Test 100_000_000 eff" $ whnf testLookupEff pmq8
           -- bench "Test 1_000_000_000 seq" $ whnf testLookupSeq pmq9,
           -- bench "Test 1_000_000_000 eff" $ whnf testLookupEff pmq9,
           -- bench "Test 10_000_000_000 seq" $ whnf testLookupSeq pmq10,
@@ -98,7 +98,7 @@ generateNPoints n = go 0
 _UL :: PMQ.Coords n
 _UL = PMQ.Coords 1000 1000 -- 1047744
 _BR :: PMQ.Coords n
-_BR = PMQ.Coords 400000 600000 -- 644403355648
+_BR = PMQ.Coords 4000000 6000000 -- 644403355648
 
 testLookupEff :: Quadtree v -> Int
 testLookupEff qt = length (PMQ.rangeLookup _UL _BR qt)
