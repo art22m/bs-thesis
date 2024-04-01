@@ -7,8 +7,17 @@ import qualified Data.PackedMemoryQuadtree as PMQ
 import System.Random
 import qualified GHC.Generics as PMQ
 
+_UL :: PMQ.Coords n
+_UL = PMQ.Coords 1000 1000 -- 1047744
+_BR :: PMQ.Coords n
+_BR = PMQ.Coords 4000000 6000000 -- 644403355648
+
 main :: IO ()
 main = do
+  benchDifferentRangeLookups 
+
+benchDifferentRangeLookups :: IO() 
+benchDifferentRangeLookups = do 
   points1 <- randomPositions 10 10000000 10000000
   points2 <- randomPositions 100 10000000 10000000
   points3 <- randomPositions 1000 10000000 10000000
@@ -94,11 +103,6 @@ generateNPoints n = go 0
       | p < n && even p = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
       | p < n && odd p = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
       | otherwise = qt'
-
-_UL :: PMQ.Coords n
-_UL = PMQ.Coords 1000 1000 -- 1047744
-_BR :: PMQ.Coords n
-_BR = PMQ.Coords 4000000 6000000 -- 644403355648
 
 testLookupEff :: Quadtree v -> Int
 testLookupEff qt = length (PMQ.rangeLookup _UL _BR qt)
