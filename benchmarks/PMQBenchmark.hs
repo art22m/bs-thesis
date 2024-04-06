@@ -2,22 +2,25 @@ module Main where
 
 import Criterion
 import Criterion.Main (defaultMain)
+import qualified Data.Map as DMap
 import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
-import System.Random
+-- import qualified Data.Vector.Map as KMap
 import qualified GHC.Generics as PMQ
+import System.Random
 
 _UL :: PMQ.Coords n
 _UL = PMQ.Coords 1000 1000 -- 1047744
+
 _BR :: PMQ.Coords n
 _BR = PMQ.Coords 4000000 6000000 -- 644403355648
 
 main :: IO ()
 main = do
-  benchDifferentRangeLookups 
+  benchDifferentRangeLookups
 
-benchDifferentRangeLookups :: IO() 
-benchDifferentRangeLookups = do 
+benchDifferentRangeLookups :: IO ()
+benchDifferentRangeLookups = do
   points1 <- randomPositions 10 10000000 10000000
   points2 <- randomPositions 100 10000000 10000000
   points3 <- randomPositions 1000 10000000 10000000
@@ -86,13 +89,13 @@ benchDifferentRangeLookups = do
         ]
     ]
 
-randomPositions :: Int -> Int -> Int -> IO[(Int, Int)]
+randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
   let gen = mkStdGen 12345
-  return $ take count $ randomRs ((0,0), (width-1,height-1)) gen
+  return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPoints ((x, y):points) val qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
+insertPoints ((x, y) : points) val qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
 insertPoints [] _ qt = qt
 
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
