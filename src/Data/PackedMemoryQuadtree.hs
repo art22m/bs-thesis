@@ -244,12 +244,12 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
       | high < low = findClosestJust vec low
       | otherwise =
           let mid = low + (high - low) `div` 2
-          in case vec ! mid of
-              Nothing -> findClosestJust vec targetKey
-              Just (midKey, _)
-                | midKey < targetKey -> findStartIndex targetKey vec (mid + 1) high
-                | otherwise -> findStartIndex targetKey vec low (mid - 1)
-                    
+           in case vec ! mid of
+                Nothing -> findClosestJust vec targetKey
+                Just (midKey, _)
+                  | midKey < targetKey -> findStartIndex targetKey vec (mid + 1) high
+                  | otherwise -> findStartIndex targetKey vec low (mid - 1)
+
     rangePMA :: PMA Int v -> [(Coords n, v)]
     rangePMA pma = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredPMA)
       where
@@ -391,7 +391,7 @@ rangeLookupQMap (Coords x1 y1) (Coords x2 y2) qt = rangeLookupQMap' zl zr qt
     zl = toZIndex (Coords (min x1 x2) (min y1 y2))
     zr = toZIndex (Coords (max x1 x2) (max y1 y2))
 
-rangeLookupQMap' ::  ZIndex n -> ZIndex n -> QuadtreeMap v -> [(Coords n, v)]
+rangeLookupQMap' :: ZIndex n -> ZIndex n -> QuadtreeMap v -> [(Coords n, v)]
 rangeLookupQMap' (ZIndex zl) (ZIndex zr) qt = go (getMap qt)
   where
     go :: DMap.Map Int v -> [(Coords n, v)]
