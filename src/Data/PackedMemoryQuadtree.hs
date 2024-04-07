@@ -371,3 +371,32 @@ randomPMQ :: Int -> Int -> Int -> IO (Quadtree String)
 randomPMQ count width height = do
   positions <- randomPositions count width height
   return (insertPoints positions "test" empty)
+
+----------------------------------------------------------------------------------------
+
+newtype QuadtreeMap a = QuadtreeMap {getMap :: DMap.Map Int a}
+  deriving (Show)
+
+emptyQMap :: QuadtreeMap v
+emptyQMap = QuadtreeMap {getMap = DMap.empty}
+
+insertQMap :: Coords n -> v -> QuadtreeMap v -> QuadtreeMap v
+insertQMap c v !qt = QuadtreeMap {getMap = DMap.insert zid v (getMap qt)}
+  where
+    ZIndex zid = toZIndex c
+
+rangeLookupQMap :: Coords n -> Coords n -> QuadtreeMap v -> [(Coords n, v)]
+rangeLookupQMap (Coords x1 y1) (Coords x2 y2) qt = rangeLookupQMap' zl zr qt
+  where
+    zl = toZIndex (Coords (min x1 x2) (min y1 y2))
+    zr = toZIndex (Coords (max x1 x2) (max y1 y2))
+
+rangeLookupQMap' ::  ZIndex n -> ZIndex n -> QuadtreeMap v -> [(Coords n, v)]
+rangeLookupQMap' (ZIndex zl) (ZIndex zr) qt = go (getMap qt)
+  where
+    go :: DMap.Map Int v -> [(Coords n, v)]
+    go dmap = map (\(c, v) -> (fromZIndex' c, v)) (DMap.toList filteredMap)
+      where
+        (_, rmap) = DMap.split (zl - 1) dmap
+        (lmap, _) = DMap.split (zr + 1) rmap
+        filteredMap = DMap.filterWithKey (\k _ -> isRelevant' zl zr k) lmap
