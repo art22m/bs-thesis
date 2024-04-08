@@ -2,11 +2,8 @@ module Main where
 
 import Criterion
 import Criterion.Main (defaultMain)
-import qualified Data.Map as DMap
-import Data.PackedMemoryQuadtree (Quadtree, QuadtreeMap)
+import Data.PackedMemoryQuadtree (Quadtree, QuadtreeDMap)
 import qualified Data.PackedMemoryQuadtree as PMQ
--- import qualified Data.Vector.Map as KMap
-import qualified GHC.Generics as PMQ
 import System.Random
 
 _UL :: PMQ.Coords n
@@ -22,169 +19,143 @@ main = do
 
 benchDifferentQuadtrees :: IO ()
 benchDifferentQuadtrees = do
-  points1 <- randomPositions 10 10000000 10000000
-  points2 <- randomPositions 100 10000000 10000000
-  points3 <- randomPositions 1000 10000000 10000000
-  points4 <- randomPositions 10000 10000000 10000000
-  points5 <- randomPositions 100000 10000000 10000000
-  points6 <- randomPositions 1000000 10000000 10000000
-  points7 <- randomPositions 10000000 10000000 10000000
-  points8 <- randomPositions 100000000 10000000 10000000
-  points9 <- randomPositions 1000000000 10000000 10000000
-  points10 <- randomPositions 10000000000 10000000 10000000
-  points11 <- randomPositions 100000000000 10000000 10000000
-  points12 <- randomPositions 1000000000000 10000000 10000000
-  points13 <- randomPositions 10000000000000 10000000 10000000
-  points14 <- randomPositions 100000000000000 10000000 10000000
-  points15 <- randomPositions 1000000000000000 10000000 10000000
+  pmq1 <- generateAndInsertPoints 10 10000000 10000000 "data"
+  pmq2 <- generateAndInsertPoints 100 10000000 10000000 "data"
+  pmq3 <- generateAndInsertPoints 1000 10000000 10000000 "data"
+  pmq4 <- generateAndInsertPoints 10000 10000000 10000000 "data"
+  pmq5 <- generateAndInsertPoints 100000 10000000 10000000 "data"
+  pmq6 <- generateAndInsertPoints 1000000 10000000 10000000 "data"
+  pmq7 <- generateAndInsertPoints 10000000 10000000 10000000 "data"
+  pmq8 <- generateAndInsertPoints 100000000 10000000 10000000 "data"
+  pmq9 <- generateAndInsertPoints 1000000000 10000000 10000000 "data"
+  pmq10 <- generateAndInsertPoints 10000000000 10000000 10000000 "data"
+  pmq11 <- generateAndInsertPoints 100000000000 10000000 10000000 "data"
+  pmq12 <- generateAndInsertPoints 1000000000000 10000000 10000000 "data"
+  pmq13 <- generateAndInsertPoints 10000000000000 10000000 10000000 "data"
+  pmq14 <- generateAndInsertPoints 100000000000000 10000000 10000000 "data"
+  pmq15 <- generateAndInsertPoints 1000000000000000 10000000 10000000 "data"
 
-  let pmq1 = insertPoints points1 "test" PMQ.empty
-  let pmq2 = insertPoints points2 "test" PMQ.empty
-  let pmq3 = insertPoints points3 "test" PMQ.empty
-  let pmq4 = insertPoints points4 "test" PMQ.empty
-  let pmq5 = insertPoints points5 "test" PMQ.empty
-  let pmq6 = insertPoints points6 "test" PMQ.empty
-  let pmq7 = insertPoints points7 "test" PMQ.empty
-  let pmq8 = insertPoints points8 "test" PMQ.empty
-  let pmq9 = insertPoints points9 "test" PMQ.empty
-  let pmq10 = insertPoints points10 "test" PMQ.empty
-  let pmq11 = insertPoints points11 "test" PMQ.empty
-  let pmq12 = insertPoints points12 "test" PMQ.empty
-  let pmq13 = insertPoints points13 "test" PMQ.empty
-  let pmq14 = insertPoints points14 "test" PMQ.empty
-  let pmq15 = insertPoints points15 "test" PMQ.empty
-
-  let pmqmap1 = insertPointsQMap points1 "test" PMQ.emptyQMap
-  let pmqmap2 = insertPointsQMap points2 "test" PMQ.emptyQMap
-  let pmqmap3 = insertPointsQMap points3 "test" PMQ.emptyQMap
-  let pmqmap4 = insertPointsQMap points4 "test" PMQ.emptyQMap
-  let pmqmap5 = insertPointsQMap points5 "test" PMQ.emptyQMap
-  let pmqmap6 = insertPointsQMap points6 "test" PMQ.emptyQMap
-  let pmqmap7 = insertPointsQMap points7 "test" PMQ.emptyQMap
-  let pmqmap8 = insertPointsQMap points8 "test" PMQ.emptyQMap
-  let pmqmap9 = insertPointsQMap points9 "test" PMQ.emptyQMap
-  let pmqmap10 = insertPointsQMap points10 "test" PMQ.emptyQMap
-  let pmqmap11 = insertPointsQMap points11 "test" PMQ.emptyQMap
-  let pmqmap12 = insertPointsQMap points12 "test" PMQ.emptyQMap
-  let pmqmap13 = insertPointsQMap points13 "test" PMQ.emptyQMap
-  let pmqmap14 = insertPointsQMap points14 "test" PMQ.emptyQMap
-  let pmqmap15 = insertPointsQMap points15 "test" PMQ.emptyQMap
+  qdm1 <- generateAndInsertPointsQDM 10 10000000 10000000 "data"
+  qdm2 <- generateAndInsertPointsQDM 100 10000000 10000000 "data"
+  qdm3 <- generateAndInsertPointsQDM 1000 10000000 10000000 "data"
+  qdm4 <- generateAndInsertPointsQDM 10000 10000000 10000000 "data"
+  qdm5 <- generateAndInsertPointsQDM 100000 10000000 10000000 "data"
+  qdm6 <- generateAndInsertPointsQDM 1000000 10000000 10000000 "data"
+  qdm7 <- generateAndInsertPointsQDM 10000000 10000000 10000000 "data"
+  qdm8 <- generateAndInsertPointsQDM 100000000 10000000 10000000 "data"
+  qdm9 <- generateAndInsertPointsQDM 1000000000 10000000 10000000 "data"
+  qdm10 <- generateAndInsertPointsQDM 10000000000 10000000 10000000 "data"
+  qdm11 <- generateAndInsertPointsQDM 100000000000 10000000 10000000 "data"
+  qdm12 <- generateAndInsertPointsQDM 1000000000000 10000000 10000000 "data"
+  qdm13 <- generateAndInsertPointsQDM 10000000000000 10000000 10000000 "data"
+  qdm14 <- generateAndInsertPointsQDM 100000000000000 10000000 10000000 "data"
+  qdm15 <- generateAndInsertPointsQDM 1000000000000000 10000000 10000000 "data"
 
   defaultMain
     [ bgroup
         "1e7"
-        [ bench "Test 10 seq" $ whnf testLookupSeq pmq1,
-          bench "Test 10 eff" $ whnf testLookupEff pmq1,
-          bench "Test 10 qmap" $ whnf testLookupQMap pmqmap1,
-
-          bench "Test 100 seq" $ whnf testLookupSeq pmq2,
-          bench "Test 100 eff" $ whnf testLookupEff pmq2,
-          bench "Test 100 qmap" $ whnf testLookupQMap pmqmap2,
-
-          bench "Test 1000 seq" $ whnf testLookupSeq pmq3,
-          bench "Test 1000 eff" $ whnf testLookupEff pmq3,
-          bench "Test 1000 qmap" $ whnf testLookupQMap pmqmap3,
-
-          bench "Test 10_000 seq" $ whnf testLookupSeq pmq4,
-          bench "Test 10_000 eff" $ whnf testLookupEff pmq4,
-          bench "Test 10_000 qmap" $ whnf testLookupQMap pmqmap4,
-
-          bench "Test 100_000 seq" $ whnf testLookupSeq pmq5,
-          bench "Test 100_000 eff" $ whnf testLookupEff pmq5,
-          bench "Test 100_000 qmap" $ whnf testLookupQMap pmqmap5,
-
-          bench "Test 1_000_000 seq" $ whnf testLookupSeq pmq6,
-          bench "Test 1_000_000 eff" $ whnf testLookupEff pmq6,
-          bench "Test 1_000_000 qmap" $ whnf testLookupQMap pmqmap6,
-          
-          bench "Test 10_000_000 seq" $ whnf testLookupSeq pmq7,
-          bench "Test 10_000_000 eff" $ whnf testLookupEff pmq7,
-          bench "Test 10_000_000 qmap" $ whnf testLookupQMap pmqmap7
+        [ bench "Test 10 seq" $ whnf (testLookupSeq _UL _BR) pmq1,
+          bench "Test 10 eff" $ whnf (testLookupEff _UL _BR) pmq1,
+          bench "Test 10 qmap" $ whnf (testLookupQDM _UL _BR) qdm1,
+          bench "Test 100 seq" $ whnf (testLookupSeq _UL _BR) pmq2,
+          bench "Test 100 eff" $ whnf (testLookupEff _UL _BR) pmq2,
+          bench "Test 100 qmap" $ whnf (testLookupQDM _UL _BR) qdm2,
+          bench "Test 1000 seq" $ whnf (testLookupSeq _UL _BR) pmq3,
+          bench "Test 1000 eff" $ whnf (testLookupEff _UL _BR) pmq3,
+          bench "Test 1000 qmap" $ whnf (testLookupQDM _UL _BR) qdm3,
+          bench "Test 10_000 seq" $ whnf (testLookupSeq _UL _BR) pmq4,
+          bench "Test 10_000 eff" $ whnf (testLookupEff _UL _BR) pmq4,
+          bench "Test 10_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm4,
+          bench "Test 100_000 seq" $ whnf (testLookupSeq _UL _BR) pmq5,
+          bench "Test 100_000 eff" $ whnf (testLookupEff _UL _BR) pmq5,
+          bench "Test 100_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm5,
+          bench "Test 1_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq6,
+          bench "Test 1_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq6,
+          bench "Test 1_000_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm6,
+          bench "Test 10_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq7,
+          bench "Test 10_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq7,
+          bench "Test 10_000_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm7
         ]
     ]
 
 benchDifferentRangeLookups :: IO ()
 benchDifferentRangeLookups = do
-  points1 <- randomPositions 10 10000000 10000000
-  points2 <- randomPositions 100 10000000 10000000
-  points3 <- randomPositions 1000 10000000 10000000
-  points4 <- randomPositions 10000 10000000 10000000
-  points5 <- randomPositions 100000 10000000 10000000
-  points6 <- randomPositions 1000000 10000000 10000000
-  points7 <- randomPositions 10000000 10000000 10000000
-  points8 <- randomPositions 100000000 10000000 10000000
-  points9 <- randomPositions 1000000000 10000000 10000000
-  points10 <- randomPositions 10000000000 10000000 10000000
-  points11 <- randomPositions 100000000000 10000000 10000000
-  points12 <- randomPositions 1000000000000 10000000 10000000
-  points13 <- randomPositions 10000000000000 10000000 10000000
-  points14 <- randomPositions 100000000000000 10000000 10000000
-  points15 <- randomPositions 1000000000000000 10000000 10000000
-
-  let pmq1 = insertPoints points1 "test" PMQ.empty
-  let pmq2 = insertPoints points2 "test" PMQ.empty
-  let pmq3 = insertPoints points3 "test" PMQ.empty
-  let pmq4 = insertPoints points4 "test" PMQ.empty
-  let pmq5 = insertPoints points5 "test" PMQ.empty
-  let pmq6 = insertPoints points6 "test" PMQ.empty
-  let pmq7 = insertPoints points7 "test" PMQ.empty
-  let pmq8 = insertPoints points8 "test" PMQ.empty
-  let pmq9 = insertPoints points9 "test" PMQ.empty
-  let pmq10 = insertPoints points10 "test" PMQ.empty
-  let pmq11 = insertPoints points11 "test" PMQ.empty
-  let pmq12 = insertPoints points12 "test" PMQ.empty
-  let pmq13 = insertPoints points13 "test" PMQ.empty
-  let pmq14 = insertPoints points14 "test" PMQ.empty
-  let pmq15 = insertPoints points15 "test" PMQ.empty
+  pmq1 <- generateAndInsertPoints 10 10000000 10000000 "data"
+  pmq2 <- generateAndInsertPoints 100 10000000 10000000 "data"
+  pmq3 <- generateAndInsertPoints 1000 10000000 10000000 "data"
+  pmq4 <- generateAndInsertPoints 10000 10000000 10000000 "data"
+  pmq5 <- generateAndInsertPoints 100000 10000000 10000000 "data"
+  pmq6 <- generateAndInsertPoints 1000000 10000000 10000000 "data"
+  pmq7 <- generateAndInsertPoints 10000000 10000000 10000000 "data"
+  pmq8 <- generateAndInsertPoints 100000000 10000000 10000000 "data"
+  pmq9 <- generateAndInsertPoints 1000000000 10000000 10000000 "data"
+  pmq10 <- generateAndInsertPoints 10000000000 10000000 10000000 "data"
+  pmq11 <- generateAndInsertPoints 100000000000 10000000 10000000 "data"
+  pmq12 <- generateAndInsertPoints 1000000000000 10000000 10000000 "data"
+  pmq13 <- generateAndInsertPoints 10000000000000 10000000 10000000 "data"
+  pmq14 <- generateAndInsertPoints 100000000000000 10000000 10000000 "data"
+  pmq15 <- generateAndInsertPoints 1000000000000000 10000000 10000000 "data"
 
   defaultMain
     [ bgroup
         "1e7"
-        [ bench "Test 10 seq" $ whnf testLookupSeq pmq1,
-          bench "Test 10 eff" $ whnf testLookupEff pmq1,
-          bench "Test 100 seq" $ whnf testLookupSeq pmq2,
-          bench "Test 100 eff" $ whnf testLookupEff pmq2,
-          bench "Test 1000 seq" $ whnf testLookupSeq pmq3,
-          bench "Test 1000 eff" $ whnf testLookupEff pmq3,
-          bench "Test 10_000 seq" $ whnf testLookupSeq pmq4,
-          bench "Test 10_000 eff" $ whnf testLookupEff pmq4,
-          bench "Test 100_000 seq" $ whnf testLookupSeq pmq5,
-          bench "Test 100_000 eff" $ whnf testLookupEff pmq5,
-          bench "Test 1_000_000 seq" $ whnf testLookupSeq pmq6,
-          bench "Test 1_000_000 eff" $ whnf testLookupEff pmq6,
-          bench "Test 10_000_000 seq" $ whnf testLookupSeq pmq7,
-          bench "Test 10_000_000 eff" $ whnf testLookupEff pmq7,
-          bench "Test 100_000_000 seq" $ whnf testLookupSeq pmq8,
-          bench "Test 100_000_000 eff" $ whnf testLookupEff pmq8
-          -- bench "Test 1_000_000_000 seq" $ whnf testLookupSeq pmq9,
-          -- bench "Test 1_000_000_000 eff" $ whnf testLookupEff pmq9,
-          -- bench "Test 10_000_000_000 seq" $ whnf testLookupSeq pmq10,
-          -- bench "Test 10_000_000_000 eff" $ whnf testLookupEff pmq10,
-          -- bench "Test 100_000_000_000 seq" $ whnf testLookupSeq pmq11,
-          -- bench "Test 100_000_000_000 eff" $ whnf testLookupEff pmq11,
-          -- bench "Test 1_000_000_000_000 seq" $ whnf testLookupSeq pmq12,
-          -- bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff pmq12,
-          -- bench "Test 10_000_000_000_000 seq" $ whnf testLookupSeq pmq13,
-          -- bench "Test 10_000_000_000_000 eff" $ whnf testLookupEff pmq13,
-          -- bench "Test 100_000_000_000_000 seq" $ whnf testLookupSeq pmq14,
-          -- bench "Test 100_000_000_000_000 eff" $ whnf testLookupEff pmq14,
-          -- bench "Test 1_000_000_000_000_000 seq" $ whnf testLookupSeq pmq15,
+        [ bench "Test 10 seq" $ whnf (testLookupSeq _UL _BR) pmq1,
+          bench "Test 10 eff" $ whnf (testLookupEff _UL _BR) pmq1,
+          bench "Test 100 seq" $ whnf (testLookupSeq _UL _BR) pmq2,
+          bench "Test 100 eff" $ whnf (testLookupEff _UL _BR) pmq2,
+          bench "Test 1000 seq" $ whnf (testLookupSeq _UL _BR) pmq3,
+          bench "Test 1000 eff" $ whnf (testLookupEff _UL _BR) pmq3,
+          bench "Test 10_000 seq" $ whnf (testLookupSeq _UL _BR) pmq4,
+          bench "Test 10_000 eff" $ whnf (testLookupEff _UL _BR) pmq4,
+          bench "Test 100_000 seq" $ whnf (testLookupSeq _UL _BR) pmq5,
+          bench "Test 100_000 eff" $ whnf (testLookupEff _UL _BR) pmq5,
+          bench "Test 1_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq6,
+          bench "Test 1_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq6,
+          bench "Test 10_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq7,
+          bench "Test 10_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq7,
+          bench "Test 100_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq8,
+          bench "Test 100_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq8
+          -- bench "Test 1_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq9,
+          -- bench "Test 1_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq9,
+          -- bench "Test 10_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq10,
+          -- bench "Test 10_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq10,
+          -- bench "Test 100_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq11,
+          -- bench "Test 100_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq11,
+          -- bench "Test 1_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq12,
+          -- bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq12,
+          -- bench "Test 10_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq13,
+          -- bench "Test 10_000_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq13,
+          -- bench "Test 100_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq14,
+          -- bench "Test 100_000_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq14,
+          -- bench "Test 1_000_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq15,
           -- bench "Test 1_000_000_000_000_000 eff" $ whnf testLookupEff pmq15
         ]
     ]
+
+insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
+insertPoints ((x, y) : points) val qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
+insertPoints [] _ qt = qt
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
   let gen = mkStdGen 12345
   return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
-insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPoints ((x, y) : points) val qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
-insertPoints [] _ qt = qt
+generateAndInsertPoints :: Int -> Int -> Int -> v -> IO (Quadtree v)
+generateAndInsertPoints count width height val = do
+  points <- randomPositions count width height
+  let qt = insertPoints points val PMQ.empty
+  return qt
 
-insertPointsQMap :: [(Int, Int)] -> v -> QuadtreeMap v -> QuadtreeMap v
-insertPointsQMap ((x, y) : points) val qt = insertPointsQMap points val (PMQ.insertQMap (PMQ.Coords x y) val qt)
-insertPointsQMap [] _ qt = qt
+insertPointsQDM :: [(Int, Int)] -> v -> QuadtreeDMap v -> QuadtreeDMap v
+insertPointsQDM ((x, y) : points) val qt = insertPointsQDM points val (PMQ.insertQDM (PMQ.Coords x y) val qt)
+insertPointsQDM [] _ qt = qt
+
+generateAndInsertPointsQDM :: Int -> Int -> Int -> v -> IO (QuadtreeDMap v)
+generateAndInsertPointsQDM count width height val = do
+  points <- randomPositions count width height
+  let qt = insertPointsQDM points val PMQ.emptyQDM
+  return qt
 
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
 generateNPoints n = go 0
@@ -195,14 +166,14 @@ generateNPoints n = go 0
       | p < n && odd p = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
       | otherwise = qt'
 
-testLookupEff :: Quadtree v -> Int
-testLookupEff qt = length (PMQ.rangeLookup _UL _BR qt)
+testLookupEff :: PMQ.Coords n -> PMQ.Coords n -> Quadtree v -> Int
+testLookupEff l r qt = length (PMQ.rangeLookup l r qt)
 
-testLookupDummy :: Quadtree v -> Int
-testLookupDummy qt = length (PMQ.rangeLookupDummy _UL _BR qt)
+testLookupDummy :: PMQ.Coords n -> PMQ.Coords n -> Quadtree v -> Int
+testLookupDummy l r qt = length (PMQ.rangeLookupDummy l r qt)
 
-testLookupSeq :: Quadtree v -> Int
-testLookupSeq qt = length (PMQ.rangeLookupSeq _UL _BR qt)
+testLookupSeq :: PMQ.Coords n -> PMQ.Coords n -> Quadtree v -> Int
+testLookupSeq l r qt = length (PMQ.rangeLookupSeq l r qt)
 
-testLookupQMap :: QuadtreeMap v -> Int
-testLookupQMap qt = length (PMQ.rangeLookupQMap _UL _BR qt)
+testLookupQDM :: PMQ.Coords n -> PMQ.Coords n -> QuadtreeDMap v -> Int
+testLookupQDM l r qt = length (PMQ.rangeLookupQDM l r qt)

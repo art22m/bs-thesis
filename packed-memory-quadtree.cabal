@@ -51,6 +51,10 @@ executable packed-memory-quadtree
     , QuickCheck
     , random
     , vector
+    -- , structures
+    -- , QuadTree
+    -- , spacepart
+    -- , data-r-tree
 
 benchmark rangelookup
   type:           exitcode-stdio-1.0

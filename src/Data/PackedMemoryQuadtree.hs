@@ -374,25 +374,25 @@ randomPMQ count width height = do
 
 ----------------------------------------------------------------------------------------
 
-newtype QuadtreeMap a = QuadtreeMap {getMap :: DMap.Map Int a}
+newtype QuadtreeDMap a = QuadtreeDMap {getMap :: DMap.Map Int a}
   deriving (Show)
 
-emptyQMap :: QuadtreeMap v
-emptyQMap = QuadtreeMap {getMap = DMap.empty}
+emptyQDM :: QuadtreeDMap v
+emptyQDM = QuadtreeDMap {getMap = DMap.empty}
 
-insertQMap :: Coords n -> v -> QuadtreeMap v -> QuadtreeMap v
-insertQMap c v !qt = QuadtreeMap {getMap = DMap.insert zid v (getMap qt)}
+insertQDM :: Coords n -> v -> QuadtreeDMap v -> QuadtreeDMap v
+insertQDM c v !qt = QuadtreeDMap {getMap = DMap.insert zid v (getMap qt)}
   where
     ZIndex zid = toZIndex c
 
-rangeLookupQMap :: Coords n -> Coords n -> QuadtreeMap v -> [(Coords n, v)]
-rangeLookupQMap (Coords x1 y1) (Coords x2 y2) qt = rangeLookupQMap' zl zr qt
+rangeLookupQDM :: Coords n -> Coords n -> QuadtreeDMap v -> [(Coords n, v)]
+rangeLookupQDM (Coords x1 y1) (Coords x2 y2) qt = rangeLookupQDM' zl zr qt
   where
     zl = toZIndex (Coords (min x1 x2) (min y1 y2))
     zr = toZIndex (Coords (max x1 x2) (max y1 y2))
 
-rangeLookupQMap' :: ZIndex n -> ZIndex n -> QuadtreeMap v -> [(Coords n, v)]
-rangeLookupQMap' (ZIndex zl) (ZIndex zr) qt = go (getMap qt)
+rangeLookupQDM' :: ZIndex n -> ZIndex n -> QuadtreeDMap v -> [(Coords n, v)]
+rangeLookupQDM' (ZIndex zl) (ZIndex zr) qt = go (getMap qt)
   where
     go :: DMap.Map Int v -> [(Coords n, v)]
     go dmap = map (\(c, v) -> (fromZIndex' c, v)) (DMap.toList filteredMap)
