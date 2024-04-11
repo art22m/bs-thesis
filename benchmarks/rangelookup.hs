@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Main where
 
 import Criterion
@@ -15,7 +16,46 @@ _BR = PMQ.Coords 4000000 6000000 -- 644403355648
 main :: IO ()
 main = do
   -- benchDifferentRangeLookups
-  benchDifferentQuadtrees
+  -- benchDifferentQuadtrees
+  benchNoUpperLeft
+
+benchNoUpperLeft :: IO() 
+benchNoUpperLeft = do 
+  -- 2^27 x 2^27
+  -- 268435456 >> 1 == 134217728
+  ul <- randomPositions' 10000000 0 0 134217728 134217728
+  ur <- randomPositions' 10000000 134217728 0 268435456 134217728
+  bl <- randomPositions' 10000000 0 134217728 134217728 268435456
+  br <- randomPositions' 10000000 134217728 134217728 268435456 268435456
+
+  let from = PMQ.Coords 0 134217728
+  let to = PMQ.Coords 134217728 268435456
+
+  let pmq1 = insertPoints ul "t" PMQ.empty
+  let pmq2 = insertPoints bl "t" pmq1
+  let pmq3 = insertPoints br "t" pmq2
+  let pmq4 = insertPoints ur "t" pmq3
+
+  let pmqTest = insertPoints bl "t" PMQ.empty
+
+  print (testLookupSeq from to pmqTest)
+  print (testLookupEff from to pmqTest)
+
+  print (testLookupSeq from to pmq3)
+  print (testLookupEff from to pmq3)
+
+  print (testLookupSeq from to pmq4)
+  print (testLookupEff from to pmq4)
+
+  defaultMain
+    [ bgroup
+        "1e7"
+        [ bench "Test seq without ur" $ whnf (testLookupSeq from to) pmq3,
+          bench "Test eff withour ur" $ whnf (testLookupEff from to) pmq3,
+          bench "Test seq with ur" $ whnf (testLookupSeq from to) pmq4,
+          bench "Test eff with ur" $ whnf (testLookupEff from to) pmq4
+        ]
+    ]
 
 benchDifferentQuadtrees :: IO ()
 benchDifferentQuadtrees = do
@@ -26,14 +66,6 @@ benchDifferentQuadtrees = do
   pmq5 <- generateAndInsertPoints 100000 10000000 10000000 "data"
   pmq6 <- generateAndInsertPoints 1000000 10000000 10000000 "data"
   pmq7 <- generateAndInsertPoints 10000000 10000000 10000000 "data"
-  pmq8 <- generateAndInsertPoints 100000000 10000000 10000000 "data"
-  pmq9 <- generateAndInsertPoints 1000000000 10000000 10000000 "data"
-  pmq10 <- generateAndInsertPoints 10000000000 10000000 10000000 "data"
-  pmq11 <- generateAndInsertPoints 100000000000 10000000 10000000 "data"
-  pmq12 <- generateAndInsertPoints 1000000000000 10000000 10000000 "data"
-  pmq13 <- generateAndInsertPoints 10000000000000 10000000 10000000 "data"
-  pmq14 <- generateAndInsertPoints 100000000000000 10000000 10000000 "data"
-  pmq15 <- generateAndInsertPoints 1000000000000000 10000000 10000000 "data"
 
   qdm1 <- generateAndInsertPointsQDM 10 10000000 10000000 "data"
   qdm2 <- generateAndInsertPointsQDM 100 10000000 10000000 "data"
@@ -42,15 +74,11 @@ benchDifferentQuadtrees = do
   qdm5 <- generateAndInsertPointsQDM 100000 10000000 10000000 "data"
   qdm6 <- generateAndInsertPointsQDM 1000000 10000000 10000000 "data"
   qdm7 <- generateAndInsertPointsQDM 10000000 10000000 10000000 "data"
-  qdm8 <- generateAndInsertPointsQDM 100000000 10000000 10000000 "data"
-  qdm9 <- generateAndInsertPointsQDM 1000000000 10000000 10000000 "data"
-  qdm10 <- generateAndInsertPointsQDM 10000000000 10000000 10000000 "data"
-  qdm11 <- generateAndInsertPointsQDM 100000000000 10000000 10000000 "data"
-  qdm12 <- generateAndInsertPointsQDM 1000000000000 10000000 10000000 "data"
-  qdm13 <- generateAndInsertPointsQDM 10000000000000 10000000 10000000 "data"
-  qdm14 <- generateAndInsertPointsQDM 100000000000000 10000000 10000000 "data"
-  qdm15 <- generateAndInsertPointsQDM 1000000000000000 10000000 10000000 "data"
 
+  -- print (testLookupSeq _UL _BR pmq7)
+  -- print (testLookupEff _UL _BR pmq7)
+  -- print (testLookupQDM _UL _BR qdm7)
+  
   defaultMain
     [ bgroup
         "1e7"
@@ -88,14 +116,7 @@ benchDifferentRangeLookups = do
   pmq6 <- generateAndInsertPoints 1000000 10000000 10000000 "data"
   pmq7 <- generateAndInsertPoints 10000000 10000000 10000000 "data"
   pmq8 <- generateAndInsertPoints 100000000 10000000 10000000 "data"
-  pmq9 <- generateAndInsertPoints 1000000000 10000000 10000000 "data"
-  pmq10 <- generateAndInsertPoints 10000000000 10000000 10000000 "data"
-  pmq11 <- generateAndInsertPoints 100000000000 10000000 10000000 "data"
-  pmq12 <- generateAndInsertPoints 1000000000000 10000000 10000000 "data"
-  pmq13 <- generateAndInsertPoints 10000000000000 10000000 10000000 "data"
-  pmq14 <- generateAndInsertPoints 100000000000000 10000000 10000000 "data"
-  pmq15 <- generateAndInsertPoints 1000000000000000 10000000 10000000 "data"
-
+  
   defaultMain
     [ bgroup
         "1e7"
@@ -115,35 +136,34 @@ benchDifferentRangeLookups = do
           bench "Test 10_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq7,
           bench "Test 100_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq8,
           bench "Test 100_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq8
-          -- bench "Test 1_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq9,
-          -- bench "Test 1_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq9,
-          -- bench "Test 10_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq10,
-          -- bench "Test 10_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq10,
-          -- bench "Test 100_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq11,
-          -- bench "Test 100_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq11,
-          -- bench "Test 1_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq12,
-          -- bench "Test 1_000_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq12,
-          -- bench "Test 10_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq13,
-          -- bench "Test 10_000_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq13,
-          -- bench "Test 100_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq14,
-          -- bench "Test 100_000_000_000_000 eff" $ whnf testLookupEff  _UL _BR pmq14,
-          -- bench "Test 1_000_000_000_000_000 seq" $ whnf testLookupSeq  _UL _BR pmq15,
-          -- bench "Test 1_000_000_000_000_000 eff" $ whnf testLookupEff pmq15
         ]
     ]
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPoints ((x, y) : points) val qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
-insertPoints [] _ qt = qt
+insertPoints ((x, y) : points) val !qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
+insertPoints [] _ !qt = qt
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
   let gen = mkStdGen 12345
   return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
+randomPositions' :: Int -> Int -> Int -> Int -> Int -> IO [(Int, Int)]
+randomPositions' count xl yl xr yr = do
+    gen <- newStdGen
+    let xs = randomRs (xl, xr) gen
+        ys = randomRs (yl, yr) gen
+    return $ take count $ zip xs ys
+
 generateAndInsertPoints :: Int -> Int -> Int -> v -> IO (Quadtree v)
 generateAndInsertPoints count width height val = do
   points <- randomPositions count width height
+  let qt = insertPoints points val PMQ.empty
+  return qt
+
+generateAndInsertPoints' :: Int -> Int -> Int -> Int -> Int -> v -> IO (Quadtree v)
+generateAndInsertPoints' count xl yl xr yr val = do
+  points <- randomPositions' count xl yl xr yr
   let qt = insertPoints points val PMQ.empty
   return qt
 
