@@ -23,12 +23,13 @@ benchNoUpperLeft :: IO()
 benchNoUpperLeft = do 
   -- 2^27 x 2^27
   -- 268435456 >> 1 == 134217728
+  -- no_<missed_quadrant>_<quadrants_in_range>_<number_of_data>
   ul <- randomPositions' 10000000 0 0 134217728 134217728
   ur <- randomPositions' 10000000 134217728 0 268435456 134217728
   bl <- randomPositions' 10000000 0 134217728 134217728 268435456
   br <- randomPositions' 10000000 134217728 134217728 268435456 268435456
 
-  let from = PMQ.Coords 0 134217728
+  let from = PMQ.Coords 0 0 
   let to = PMQ.Coords 134217728 268435456
 
   let pmq1 = insertPoints ul "t" PMQ.empty
@@ -36,10 +37,9 @@ benchNoUpperLeft = do
   let pmq3 = insertPoints br "t" pmq2
   let pmq4 = insertPoints ur "t" pmq3
 
-  let pmqTest = insertPoints bl "t" PMQ.empty
-
-  print (testLookupSeq from to pmqTest)
-  print (testLookupEff from to pmqTest)
+  -- let pmqTest = insertPoints ur "t" PMQ.empty
+  -- print (testLookupSeq from to pmqTest)
+  -- print (testLookupEff from to pmqTest)
 
   print (testLookupSeq from to pmq3)
   print (testLookupEff from to pmq3)
