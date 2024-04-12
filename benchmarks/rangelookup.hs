@@ -24,36 +24,53 @@ benchNoUpperLeft = do
   -- 2^27 x 2^27
   -- 268435456 >> 1 == 134217728
   -- no_<missed_quadrant>_<quadrants_in_range>_<number_of_data>
-  ul <- randomPositions' 10000000 0 0 134217728 134217728
-  ur <- randomPositions' 10000000 134217728 0 268435456 134217728
-  bl <- randomPositions' 10000000 0 134217728 134217728 268435456
-  br <- randomPositions' 10000000 134217728 134217728 268435456 268435456
+  let count = 5000000
+  ul <- randomPositions' count 0 0 134217728 134217728
+  ur <- randomPositions' count 134217728 0 268435456 134217728
+  bl <- randomPositions' count 0 134217728 134217728 268435456
+  br <- randomPositions' count 134217728 134217728 268435456 268435456
 
-  let from = PMQ.Coords 0 0 
-  let to = PMQ.Coords 134217728 268435456
+  let fromX = 67108864
+  let fromY = 67108864
+  let from = PMQ.Coords fromX fromY
+
+  let toX = 201326592
+  let toY = 201326592
+  let to = PMQ.Coords toX toY
 
   let pmq1 = insertPoints ul "t" PMQ.empty
-  let pmq2 = insertPoints bl "t" pmq1
-  let pmq3 = insertPoints br "t" pmq2
+  let pmq2 = insertPoints br "t" pmq1
+  let pmq3 = insertPoints bl "t" pmq2
   let pmq4 = insertPoints ur "t" pmq3
+
+  let qdm1 = insertPointsQDM ul "t" PMQ.emptyQDM
+  let qdm2 = insertPointsQDM br "t" qdm1
+  let qdm3 = insertPointsQDM bl "t" qdm2
+  let qdm4 = insertPointsQDM ur "t" qdm3
 
   -- let pmqTest = insertPoints ur "t" PMQ.empty
   -- print (testLookupSeq from to pmqTest)
   -- print (testLookupEff from to pmqTest)
 
-  print (testLookupSeq from to pmq3)
-  print (testLookupEff from to pmq3)
+  print (testLookupSeq from to pmq2)
+  print (testLookupEff from to pmq2)
+  print (testLookupQDM from to qdm2)
 
   print (testLookupSeq from to pmq4)
   print (testLookupEff from to pmq4)
+  print (testLookupQDM from to qdm4)
 
+  let benchName = "(" ++ show fromX ++"," ++ show fromY ++ "), (" ++ show toX ++ "," ++ show toY ++ "), count=" ++ show count
   defaultMain
     [ bgroup
-        "1e7"
-        [ bench "Test seq without ur" $ whnf (testLookupSeq from to) pmq3,
-          bench "Test eff withour ur" $ whnf (testLookupEff from to) pmq3,
-          bench "Test seq with ur" $ whnf (testLookupSeq from to) pmq4,
-          bench "Test eff with ur" $ whnf (testLookupEff from to) pmq4
+        benchName
+        [ bench "Test seq without bl, ur" $ whnf (testLookupSeq from to) pmq2,
+          bench "Test eff withour bl, ur" $ whnf (testLookupEff from to) pmq2,
+          bench "Test qdm withour bl, ur" $ whnf (testLookupQDM from to) qdm2,
+
+          bench "Test seq with bl, ur" $ whnf (testLookupSeq from to) pmq4,
+          bench "Test eff with bl, ur" $ whnf (testLookupEff from to) pmq4,
+          bench "Test qdm with bl, ur" $ whnf (testLookupQDM from to) qdm4
         ]
     ]
 
