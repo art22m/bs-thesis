@@ -67,7 +67,7 @@ test4 = do
 
 randomPositions :: Int -> Int -> Int -> IO[(Int, Int)]
 randomPositions count width height = do
-  gen <- newStdGen
+  let gen = mkStdGen 42
   return $ take count $ randomRs ((0,0), (width-1,height-1)) gen
 
 insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v

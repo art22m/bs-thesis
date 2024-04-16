@@ -17,11 +17,25 @@ main :: IO ()
 main = do
   -- benchDifferentRangeLookups
   -- benchDifferentQuadtrees
-  benchNoUpperLeft
+  -- benchNoUpperLeft
+  printPoints
+
+printPoints :: IO() 
+printPoints = do 
+  let count = 50
+  ul <- randomPositions' count 0 0 134217728 134217728
+  ur <- randomPositions' count 134217728 0 268435456 134217728
+  bl <- randomPositions' count 0 134217728 134217728 268435456
+  br <- randomPositions' count 134217728 134217728 268435456 268435456
+
+  print (ul ++ ur ++ bl ++ br)
+
+  -- pos <- randomPositions 10 268435456 268435456
+  -- print pos
 
 benchNoUpperLeft :: IO() 
 benchNoUpperLeft = do 
-  -- 2^27 x 2^27
+  -- 2^28 x 2^28
   -- 268435456 >> 1 == 134217728
   -- no_<missed_quadrant>_<quadrants_in_range>_<number_of_data>
   let count = 5000000
@@ -162,14 +176,15 @@ insertPoints [] _ !qt = qt
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
-  let gen = mkStdGen 12345
+  let gen = mkStdGen 42
   return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
 
 randomPositions' :: Int -> Int -> Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions' count xl yl xr yr = do
-    gen <- newStdGen
-    let xs = randomRs (xl, xr) gen
-        ys = randomRs (yl, yr) gen
+    let gen1 = mkStdGen 42
+    let gen2 = mkStdGen 24
+    let xs = randomRs (xl, xr) gen1
+        ys = randomRs (yl, yr) gen2
     return $ take count $ zip xs ys
 
 generateAndInsertPoints :: Int -> Int -> Int -> v -> IO (Quadtree v)
