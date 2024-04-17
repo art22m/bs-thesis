@@ -22,7 +22,7 @@ main = do
 
 printPoints :: IO() 
 printPoints = do 
-  let count = 50
+  let count = 500000
   ul <- randomPositions' count 0 0 134217728 134217728
   ur <- randomPositions' count 134217728 0 268435456 134217728
   bl <- randomPositions' count 0 134217728 134217728 268435456
