@@ -127,13 +127,13 @@ nextZIndex' curr rmin rmax = go (finiteBitSize curr) rmin rmax 0
       (1, 1, 1) -> go (i - 1) mn mx bigmin
       (_, _, _) -> error "unexpected values"
       where
-        (mx', bigmin') = splitRegion' mn mx
+        (ZIndex mx', ZIndex bigmin') = splitRegion (ZIndex mn) (ZIndex mx)
 
 -- TODO: delete
-splitRegion' :: Int -> Int -> (Int, Int)
-splitRegion' l r = (nl, nr)
-  where
-    (ZIndex nl, ZIndex nr) = splitRegion (ZIndex l) (ZIndex r)
+-- splitRegion' :: Int -> Int -> (Int, Int)
+-- splitRegion' l r = (nl, nr)
+--   where
+--     (ZIndex nl, ZIndex nr) = splitRegion (ZIndex l) (ZIndex r)
 
 ---- Data Structure
 
