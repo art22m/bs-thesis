@@ -176,8 +176,11 @@ insertPoints [] _ !qt = qt
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
-  let gen = mkStdGen 42
-  return $ take count $ randomRs ((0, 0), (width - 1, height - 1)) gen
+  let gen1 = mkStdGen 42
+    let gen2 = mkStdGen 24
+    let xs = randomRs (0, width) gen1
+        ys = randomRs (0, height) gen2
+    return $ take count $ zip xs ys
 
 randomPositions' :: Int -> Int -> Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions' count xl yl xr yr = do

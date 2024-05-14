@@ -129,12 +129,6 @@ nextZIndex' curr rmin rmax = go (finiteBitSize curr) rmin rmax 0
       where
         (ZIndex mx', ZIndex bigmin') = splitRegion (ZIndex mn) (ZIndex mx)
 
--- TODO: delete
--- splitRegion' :: Int -> Int -> (Int, Int)
--- splitRegion' l r = (nl, nr)
---   where
---     (ZIndex nl, ZIndex nr) = splitRegion (ZIndex l) (ZIndex r)
-
 ---- Data Structure
 
 newtype Quadtree a = Quadtree {getPMAMap :: Map Int a}
@@ -225,8 +219,7 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
 
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
-  []
-    ++ rangePMA (Map.getPMA pmaMap)
+  rangePMA (Map.getPMA pmaMap)
     ++ rangeDMap (Map.getMap pmaMap)
     ++ rangeNS (Map.getNS pmaMap)
   where
@@ -316,7 +309,7 @@ rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
       where
         inBounds = l <= p && p <= r
         shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)
-        (litmax, bigmin) = splitRegion' l r
+        (ZIndex litmax, ZIndex bigmin) = splitRegion (ZIndex l) (ZIndex r)
 
 calculateRanges' :: Int -> Int -> [(ZIndex n, ZIndex n)]
 calculateRanges' ul br = calculateRanges (ZIndex ul) (ZIndex br)
@@ -338,7 +331,7 @@ calculateRanges (ZIndex ul) (ZIndex br) = go ul br ul 0 []
       where
         inBounds = l <= p && p <= r
         shouldLookup = isRelevant (ZIndex l) (ZIndex r) (ZIndex p)
-        (litmax, bigmin) = splitRegion' l r
+        (ZIndex litmax, ZIndex bigmin) =  splitRegion (ZIndex l) (ZIndex r)
 
 -- inserts data persistently
 insertP :: Coords n -> v -> Quadtree v -> Quadtree v
