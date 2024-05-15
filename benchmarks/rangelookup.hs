@@ -4,10 +4,16 @@ module Main where
 
 import Criterion
 import Criterion.Main (defaultMain)
+
 import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
-import Data.MapWrapped (QuadtreeDMap)
-import qualified Data.MapWrapped as QDM
+
+import Data.MapWrapped (MapWrapped)
+import qualified Data.MapWrapped as MW
+
+import Data.RTreeWrapped (RTreeWrapped)
+import qualified Data.RTreeWrapped as RTW
+
 import System.Random
 
 _UL :: PMQ.Coords n
@@ -60,10 +66,10 @@ benchNoUpperLeft = do
   let pmq3 = insertPoints bl "t" pmq2
   let pmq4 = insertPoints ur "t" pmq3
 
-  let qdm1 = insertPointsQDM ul "t" QDM.empty
-  let qdm2 = insertPointsQDM br "t" qdm1
-  let qdm3 = insertPointsQDM bl "t" qdm2
-  let qdm4 = insertPointsQDM ur "t" qdm3
+  let mw1 = insertPointsMW ul "t" MW.empty
+  let mw2 = insertPointsMW br "t" mw1
+  let mw3 = insertPointsMW bl "t" mw2
+  let mw4 = insertPointsMW ur "t" mw3
 
   -- let pmqTest = insertPoints ur "t" PMQ.empty
   -- print (testLookupSeq from to pmqTest)
@@ -71,11 +77,11 @@ benchNoUpperLeft = do
 
   print (testLookupSeq from to pmq2)
   print (testLookupEff from to pmq2)
-  print (testLookupQDM from to qdm2)
+  print (testLookupMW from to mw2)
 
   print (testLookupSeq from to pmq4)
   print (testLookupEff from to pmq4)
-  print (testLookupQDM from to qdm4)
+  print (testLookupMW from to mw4)
 
   let benchName = "(" ++ show fromX ++"," ++ show fromY ++ "), (" ++ show toX ++ "," ++ show toY ++ "), count=" ++ show count
   defaultMain
@@ -83,11 +89,11 @@ benchNoUpperLeft = do
         benchName
         [ bench "Test seq without bl, ur" $ whnf (testLookupSeq from to) pmq2,
           bench "Test eff withour bl, ur" $ whnf (testLookupEff from to) pmq2,
-          bench "Test qdm withour bl, ur" $ whnf (testLookupQDM from to) qdm2,
+          bench "Test mw withour bl, ur" $ whnf (testLookupMW from to) mw2,
 
           bench "Test seq with bl, ur" $ whnf (testLookupSeq from to) pmq4,
           bench "Test eff with bl, ur" $ whnf (testLookupEff from to) pmq4,
-          bench "Test qdm with bl, ur" $ whnf (testLookupQDM from to) qdm4
+          bench "Test mw with bl, ur" $ whnf (testLookupMW from to) mw4
         ]
     ]
 
@@ -101,42 +107,42 @@ benchDifferentQuadtrees = do
   pmq6 <- generateAndInsertPoints 1000000 10000000 10000000 "data"
   pmq7 <- generateAndInsertPoints 10000000 10000000 10000000 "data"
 
-  qdm1 <- generateAndInsertPointsQDM 10 10000000 10000000 "data"
-  qdm2 <- generateAndInsertPointsQDM 100 10000000 10000000 "data"
-  qdm3 <- generateAndInsertPointsQDM 1000 10000000 10000000 "data"
-  qdm4 <- generateAndInsertPointsQDM 10000 10000000 10000000 "data"
-  qdm5 <- generateAndInsertPointsQDM 100000 10000000 10000000 "data"
-  qdm6 <- generateAndInsertPointsQDM 1000000 10000000 10000000 "data"
-  qdm7 <- generateAndInsertPointsQDM 10000000 10000000 10000000 "data"
+  mw1 <- generateAndInsertPointsMW 10 10000000 10000000 "data"
+  mw2 <- generateAndInsertPointsMW 100 10000000 10000000 "data"
+  mw3 <- generateAndInsertPointsMW 1000 10000000 10000000 "data"
+  mw4 <- generateAndInsertPointsMW 10000 10000000 10000000 "data"
+  mw5 <- generateAndInsertPointsMW 100000 10000000 10000000 "data"
+  mw6 <- generateAndInsertPointsMW 1000000 10000000 10000000 "data"
+  mw7 <- generateAndInsertPointsMW 10000000 10000000 10000000 "data"
 
   -- print (testLookupSeq _UL _BR pmq7)
   -- print (testLookupEff _UL _BR pmq7)
-  -- print (testLookupQDM _UL _BR qdm7)
+  -- print (testLookupMW _UL _BR mw7)
   
   defaultMain
     [ bgroup
         "1e7"
         [ bench "Test 10 seq" $ whnf (testLookupSeq _UL _BR) pmq1,
           bench "Test 10 eff" $ whnf (testLookupEff _UL _BR) pmq1,
-          bench "Test 10 qmap" $ whnf (testLookupQDM _UL _BR) qdm1,
+          bench "Test 10 qmap" $ whnf (testLookupMW _UL _BR) mw1,
           bench "Test 100 seq" $ whnf (testLookupSeq _UL _BR) pmq2,
           bench "Test 100 eff" $ whnf (testLookupEff _UL _BR) pmq2,
-          bench "Test 100 qmap" $ whnf (testLookupQDM _UL _BR) qdm2,
+          bench "Test 100 qmap" $ whnf (testLookupMW _UL _BR) mw2,
           bench "Test 1000 seq" $ whnf (testLookupSeq _UL _BR) pmq3,
           bench "Test 1000 eff" $ whnf (testLookupEff _UL _BR) pmq3,
-          bench "Test 1000 qmap" $ whnf (testLookupQDM _UL _BR) qdm3,
+          bench "Test 1000 qmap" $ whnf (testLookupMW _UL _BR) mw3,
           bench "Test 10_000 seq" $ whnf (testLookupSeq _UL _BR) pmq4,
           bench "Test 10_000 eff" $ whnf (testLookupEff _UL _BR) pmq4,
-          bench "Test 10_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm4,
+          bench "Test 10_000 qmap" $ whnf (testLookupMW _UL _BR) mw4,
           bench "Test 100_000 seq" $ whnf (testLookupSeq _UL _BR) pmq5,
           bench "Test 100_000 eff" $ whnf (testLookupEff _UL _BR) pmq5,
-          bench "Test 100_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm5,
+          bench "Test 100_000 qmap" $ whnf (testLookupMW _UL _BR) mw5,
           bench "Test 1_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq6,
           bench "Test 1_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq6,
-          bench "Test 1_000_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm6,
+          bench "Test 1_000_000 qmap" $ whnf (testLookupMW _UL _BR) mw6,
           bench "Test 10_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq7,
           bench "Test 10_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq7,
-          bench "Test 10_000_000 qmap" $ whnf (testLookupQDM _UL _BR) qdm7
+          bench "Test 10_000_000 qmap" $ whnf (testLookupMW _UL _BR) mw7
         ]
     ]
 
@@ -205,14 +211,14 @@ generateAndInsertPoints' count xl yl xr yr val = do
   let qt = insertPoints points val PMQ.empty
   return qt
 
-insertPointsQDM :: [(Int, Int)] -> v -> QuadtreeDMap v -> QuadtreeDMap v
-insertPointsQDM ((x, y) : points) val qt = insertPointsQDM points val (QDM.insert (PMQ.Coords x y) val qt)
-insertPointsQDM [] _ qt = qt
+insertPointsMW :: [(Int, Int)] -> v -> MapWrapped v -> MapWrapped v
+insertPointsMW ((x, y) : points) val qt = insertPointsMW points val (MW.insert (PMQ.Coords x y) val qt)
+insertPointsMW [] _ qt = qt
 
-generateAndInsertPointsQDM :: Int -> Int -> Int -> v -> IO (QuadtreeDMap v)
-generateAndInsertPointsQDM count width height val = do
+generateAndInsertPointsMW :: Int -> Int -> Int -> v -> IO (MapWrapped v)
+generateAndInsertPointsMW count width height val = do
   points <- randomPositions count width height
-  let qt = insertPointsQDM points val QDM.empty
+  let qt = insertPointsMW points val MW.empty
   return qt
 
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
@@ -233,5 +239,8 @@ testLookupDummy l r qt = length (PMQ.rangeLookupDummy l r qt)
 testLookupSeq :: PMQ.Coords n -> PMQ.Coords n -> Quadtree v -> Int
 testLookupSeq l r qt = length (PMQ.rangeLookupSeq l r qt)
 
-testLookupQDM :: PMQ.Coords n -> PMQ.Coords n -> QuadtreeDMap v -> Int
-testLookupQDM l r qt = length (QDM.rangeLookup l r qt)
+testLookupMW :: PMQ.Coords n -> PMQ.Coords n -> MapWrapped v -> Int
+testLookupMW l r mw = length (MW.rangeLookup l r mw)
+
+testLookupRTree :: PMQ.Coords n -> PMQ.Coords n -> RTreeWrapped v -> Int
+testLookupRTree l r rtw = length (RTW.rangeLookup l r rtw)
