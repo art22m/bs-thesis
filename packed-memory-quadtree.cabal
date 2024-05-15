@@ -21,6 +21,7 @@ library
     Data.PackedMemoryArray
     Data.PackedMemoryArrayMap
     Data.PackedMemoryQuadtree
+    Data.QuadtreeDataMap
 
   build-depends:
       base
@@ -42,6 +43,7 @@ executable packed-memory-quadtree
     Data.PackedMemoryArray
     Data.PackedMemoryArrayMap
     Data.PackedMemoryQuadtree
+    Data.QuadtreeDataMap
 
   build-depends:
       base

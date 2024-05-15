@@ -1,10 +1,13 @@
 {-# LANGUAGE BangPatterns #-}
+
 module Main where
 
 import Criterion
 import Criterion.Main (defaultMain)
-import Data.PackedMemoryQuadtree (Quadtree, QuadtreeDMap)
+import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
+import Data.QuadtreeDataMap (QuadtreeDMap)
+import qualified Data.QuadtreeDataMap as QDM
 import System.Random
 
 _UL :: PMQ.Coords n
@@ -57,7 +60,7 @@ benchNoUpperLeft = do
   let pmq3 = insertPoints bl "t" pmq2
   let pmq4 = insertPoints ur "t" pmq3
 
-  let qdm1 = insertPointsQDM ul "t" PMQ.emptyQDM
+  let qdm1 = insertPointsQDM ul "t" QDM.empty
   let qdm2 = insertPointsQDM br "t" qdm1
   let qdm3 = insertPointsQDM bl "t" qdm2
   let qdm4 = insertPointsQDM ur "t" qdm3
@@ -176,7 +179,7 @@ insertPoints [] _ !qt = qt
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
-  let gen1 = mkStdGen 42
+    let gen1 = mkStdGen 42
     let gen2 = mkStdGen 24
     let xs = randomRs (0, width) gen1
         ys = randomRs (0, height) gen2
@@ -203,13 +206,13 @@ generateAndInsertPoints' count xl yl xr yr val = do
   return qt
 
 insertPointsQDM :: [(Int, Int)] -> v -> QuadtreeDMap v -> QuadtreeDMap v
-insertPointsQDM ((x, y) : points) val qt = insertPointsQDM points val (PMQ.insertQDM (PMQ.Coords x y) val qt)
+insertPointsQDM ((x, y) : points) val qt = insertPointsQDM points val (QDM.insert (PMQ.Coords x y) val qt)
 insertPointsQDM [] _ qt = qt
 
 generateAndInsertPointsQDM :: Int -> Int -> Int -> v -> IO (QuadtreeDMap v)
 generateAndInsertPointsQDM count width height val = do
   points <- randomPositions count width height
-  let qt = insertPointsQDM points val PMQ.emptyQDM
+  let qt = insertPointsQDM points val QDM.empty
   return qt
 
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
@@ -231,4 +234,4 @@ testLookupSeq :: PMQ.Coords n -> PMQ.Coords n -> Quadtree v -> Int
 testLookupSeq l r qt = length (PMQ.rangeLookupSeq l r qt)
 
 testLookupQDM :: PMQ.Coords n -> PMQ.Coords n -> QuadtreeDMap v -> Int
-testLookupQDM l r qt = length (PMQ.rangeLookupQDM l r qt)
+testLookupQDM l r qt = length (QDM.rangeLookup l r qt)

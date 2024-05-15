@@ -12,7 +12,7 @@ main = do
   -- test1
   -- test2
   test3
-  -- test4
+  test4
 
 test1 :: IO ()
 test1 = do
