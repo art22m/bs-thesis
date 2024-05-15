@@ -212,14 +212,24 @@ generateAndInsertPoints' count xl yl xr yr val = do
   return qt
 
 insertPointsMW :: [(Int, Int)] -> v -> MapWrapped v -> MapWrapped v
-insertPointsMW ((x, y) : points) val qt = insertPointsMW points val (MW.insert (PMQ.Coords x y) val qt)
+insertPointsMW ((x, y) : points) val mw = insertPointsMW points val (MW.insert (PMQ.Coords x y) val mw)
 insertPointsMW [] _ qt = qt
 
 generateAndInsertPointsMW :: Int -> Int -> Int -> v -> IO (MapWrapped v)
 generateAndInsertPointsMW count width height val = do
   points <- randomPositions count width height
-  let qt = insertPointsMW points val MW.empty
-  return qt
+  let mw = insertPointsMW points val MW.empty
+  return mw
+
+insertPointsRTW :: [(Int, Int)] -> v -> RTreeWrapped v -> RTreeWrapped v
+insertPointsRTW ((x, y) : points) val rtw = insertPointsRTW points val (RTW.insert (PMQ.Coords x y) val rtw)
+insertPointsRTW [] _ qt = qt
+
+generateAndInsertPointsRTW :: Int -> Int -> Int -> v -> IO (RTreeWrapped v)
+generateAndInsertPointsRTW count width height val = do
+  points <- randomPositions count width height
+  let rtw = insertPointsRTW points val RTW.empty
+  return rtw
 
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
 generateNPoints n = go 0
