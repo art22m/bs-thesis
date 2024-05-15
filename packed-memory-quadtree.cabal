@@ -8,7 +8,7 @@ author:        Nikolai Kudasov, Artem Murashko
 maintainer:    n.kudasov@innopolis.ru, artmurashko@yandex.ru
 copyright:     2023-2024 Innopolis University
 synopsis:
-  Purely Functional Packed-Memory QuadTree with Batch Inserts and Range Queries
+  Purely Functional Packed-Memory QuadTree with Range Queries
 
 flag threaded
   default: True
