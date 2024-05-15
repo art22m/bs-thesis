@@ -6,8 +6,8 @@ import Criterion
 import Criterion.Main (defaultMain)
 import Data.PackedMemoryQuadtree (Quadtree)
 import qualified Data.PackedMemoryQuadtree as PMQ
-import Data.QuadtreeDataMap (QuadtreeDMap)
-import qualified Data.QuadtreeDataMap as QDM
+import Data.MapWrapped (QuadtreeDMap)
+import qualified Data.MapWrapped as QDM
 import System.Random
 
 _UL :: PMQ.Coords n

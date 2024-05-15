@@ -21,7 +21,9 @@ library
     Data.PackedMemoryArray
     Data.PackedMemoryArrayMap
     Data.PackedMemoryQuadtree
-    Data.QuadtreeDataMap
+    Data.MapWrapped
+    Data.RTreeWrapped
+    Data.QuadTreeWrapped
 
   build-depends:
       base
@@ -30,6 +32,8 @@ library
     , QuickCheck
     , random
     , vector
+    , data-r-tree
+    , QuadTree
 
 executable packed-memory-quadtree
   hs-source-dirs: app src
@@ -43,7 +47,9 @@ executable packed-memory-quadtree
     Data.PackedMemoryArray
     Data.PackedMemoryArrayMap
     Data.PackedMemoryQuadtree
-    Data.QuadtreeDataMap
+    Data.MapWrapped
+    Data.RTreeWrapped
+    Data.QuadTreeWrapped
 
   build-depends:
       base
@@ -53,10 +59,8 @@ executable packed-memory-quadtree
     , QuickCheck
     , random
     , vector
-    -- , structures
-    -- , QuadTree
-    -- , spacepart
-    -- , data-r-tree
+    , data-r-tree
+    , QuadTree
 
 benchmark rangelookup
   type:           exitcode-stdio-1.0

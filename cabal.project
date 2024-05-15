@@ -1,0 +1,4 @@
+packages:
+  packed-memory-quadtree.cabal
+  other/r-tree
+  other/QuadTree
