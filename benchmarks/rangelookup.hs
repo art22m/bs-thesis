@@ -31,7 +31,7 @@ main = do
 
 printPoints :: IO() 
 printPoints = do 
-  let count = 500000
+  let count = 5000
   ul <- randomPositions' count 0 0 134217728 134217728
   ur <- randomPositions' count 134217728 0 268435456 134217728
   bl <- randomPositions' count 0 134217728 134217728 268435456
@@ -47,7 +47,7 @@ benchNoUpperLeft = do
   -- 2^28 x 2^28
   -- 268435456 >> 1 == 134217728
   -- no_<missed_quadrant>_<quadrants_in_range>_<number_of_data>
-  let count = 5000000
+  let count = 15000000
   ul <- randomPositions' count 0 0 134217728 134217728
   ur <- randomPositions' count 134217728 0 268435456 134217728
   bl <- randomPositions' count 0 134217728 134217728 268435456
@@ -57,8 +57,10 @@ benchNoUpperLeft = do
   let fromY = 67108864
   let from = PMQ.Coords fromX fromY
 
-  let toX = 201326592
-  let toY = 201326592
+  -- let toX = 201326592 - 1
+  -- let toY = 201326592 - 1
+  let toX = 70000000 
+  let toY = 70000000
   let to = PMQ.Coords toX toY
 
   let pmq1 = insertPoints ul "t" PMQ.empty
@@ -71,29 +73,39 @@ benchNoUpperLeft = do
   let mw3 = insertPointsMW bl "t" mw2
   let mw4 = insertPointsMW ur "t" mw3
 
+  let rtw1 = insertPointsRTW ul "t" RTW.empty
+  let rtw2 = insertPointsRTW br "t" rtw1
+  let rtw3 = insertPointsRTW bl "t" rtw2
+  let rtw4 = insertPointsRTW ur "t" rtw3
+
   -- let pmqTest = insertPoints ur "t" PMQ.empty
   -- print (testLookupSeq from to pmqTest)
   -- print (testLookupEff from to pmqTest)
 
-  print (testLookupSeq from to pmq2)
+  -- print (testLookupSeq from to pmq2)
   print (testLookupEff from to pmq2)
-  print (testLookupMW from to mw2)
+  -- print (testLookupMW from to mw2)
+  print (testLookupRTW from to rtw2)
 
-  print (testLookupSeq from to pmq4)
-  print (testLookupEff from to pmq4)
-  print (testLookupMW from to mw4)
+  -- print (testLookupSeq from to pmq4)
+  -- print (testLookupEff from to pmq4)
+  -- print (testLookupMW from to mw4)
+  -- print (testLookupRTW from to rtw4)
 
   let benchName = "(" ++ show fromX ++"," ++ show fromY ++ "), (" ++ show toX ++ "," ++ show toY ++ "), count=" ++ show count
   defaultMain
     [ bgroup
         benchName
-        [ bench "Test seq without bl, ur" $ whnf (testLookupSeq from to) pmq2,
-          bench "Test eff withour bl, ur" $ whnf (testLookupEff from to) pmq2,
-          bench "Test mw withour bl, ur" $ whnf (testLookupMW from to) mw2,
+        [ 
+          -- bench "Test PMQ Seq without bl, ur" $ whnf (testLookupSeq from to) pmq2,
+          bench "Test PMQ nextZIndex withour bl, ur" $ whnf (testLookupEff from to) pmq2,
+          -- bench "Test Map withour bl, ur" $ whnf (testLookupMW from to) mw2,
+          bench "Test RTree withour bl, ur" $ whnf (testLookupRTW from to) rtw2,
 
-          bench "Test seq with bl, ur" $ whnf (testLookupSeq from to) pmq4,
-          bench "Test eff with bl, ur" $ whnf (testLookupEff from to) pmq4,
-          bench "Test mw with bl, ur" $ whnf (testLookupMW from to) mw4
+          -- bench "Test PMQ Seq with bl, ur" $ whnf (testLookupSeq from to) pmq4,
+          bench "Test PMQ nextZIndex with bl, ur" $ whnf (testLookupEff from to) pmq4,
+          -- bench "Test Map with bl, ur" $ whnf (testLookupMW from to) mw4,
+          bench "Test RTree with bl, ur" $ whnf (testLookupRTW from to) rtw4
         ]
     ]
 
@@ -252,5 +264,5 @@ testLookupSeq l r qt = length (PMQ.rangeLookupSeq l r qt)
 testLookupMW :: PMQ.Coords n -> PMQ.Coords n -> MapWrapped v -> Int
 testLookupMW l r mw = length (MW.rangeLookup l r mw)
 
-testLookupRTree :: PMQ.Coords n -> PMQ.Coords n -> RTreeWrapped v -> Int
-testLookupRTree l r rtw = length (RTW.rangeLookup l r rtw)
+testLookupRTW :: PMQ.Coords n -> PMQ.Coords n -> RTreeWrapped v -> Int
+testLookupRTW l r rtw = length (RTW.rangeLookup l r rtw)

@@ -1,6 +1,8 @@
 from enum import Enum
 
+import random
 from matplotlib import rcParams
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import zCurve as z
 import ast
@@ -8,15 +10,21 @@ from matplotlib.patches import Rectangle
 
 FILENAME = "data.txt"
 
-FROM_X = 2 ** 26 - 1
-FROM_Y = 2 ** 26 - 1
+FROM_X = 2 ** 26
+FROM_Y = 2 ** 26
+#
+# TO_X = (2 ** 28 + 2 ** 27) // 2 - 1
+# TO_Y = (2 ** 28 + 2 ** 27) // 2 - 1
 
-TO_X = (2 ** 28 + 2 ** 27) // 2 + 1
-TO_Y = (2 ** 28 + 2 ** 27) // 2 + 1
+TO_X = (2 ** 27) - 1
+TO_Y = (2 ** 27) - 1
 
 SIZE = 2 ** 28
 
 RECURSE = 4
+
+norm_id = 0
+norms = {}
 
 
 class Position(Enum):
@@ -34,33 +42,50 @@ def read_coordinates():
 def split_coordinates(from_x, from_y, to_x, to_y, coords):
     z_from = z.interlace(from_x, from_y)
     z_to = z.interlace(to_x, to_y)
-    print(z_from, z_to)
 
-    def get_position(x, y) -> Position:
+    def get_position(x, y) -> (Position, int):
+        global norm_id
+
         def inside(a, b, c):
             return a <= b <= c
 
         z_index = z.interlace(x, y)
         if not inside(z_from, z_index, z_to):
-            return Position.OutsideZRange
+            return Position.OutsideZRange, -1
 
         if inside(from_x, x, to_x) and inside(from_y, y, to_y):
-            return Position.InsideZRangeAndInsideRectangle
-        return Position.InsideZRangeAndOutsideRectangle
+            return Position.InsideZRangeAndInsideRectangle, -1
+
+        p = z.prev_morton(z_index, z_from, z_to, dims=2)
+        if p not in norms:
+            norms[p] = norm_id
+            norm_id += 1
+        return Position.InsideZRangeAndOutsideRectangle, norms[p]
 
     outside_z_range = []
     inside_z_range_and_outside_region = []
     inside_z_range_and_inside_region = []
     for (x, y) in coords:
-        if get_position(x, y) == Position.OutsideZRange:
+        pos_type, prev = get_position(x, y)
+        if pos_type == Position.OutsideZRange:
             outside_z_range.append((x, y))
-        elif get_position(x, y) == Position.InsideZRangeAndOutsideRectangle:
-            inside_z_range_and_outside_region.append((x, y))
+        elif pos_type == Position.InsideZRangeAndOutsideRectangle:
+            inside_z_range_and_outside_region.append(((x, y), prev))
         else:
             inside_z_range_and_inside_region.append((x, y))
+
     print(len(outside_z_range))
     print(len(inside_z_range_and_outside_region))
     print(len(inside_z_range_and_inside_region))
+    print()
+
+    # colors = list(range(0, norm_id))
+    # random.seed(46)
+    # random.shuffle(colors)
+    # for i in range(len(inside_z_range_and_outside_region)):
+    #     inside_z_range_and_outside_region[i] = (
+    #         inside_z_range_and_outside_region[i][0], colors[inside_z_range_and_outside_region[i][1]]
+    #     )
 
     return outside_z_range, inside_z_range_and_outside_region, inside_z_range_and_inside_region
 
@@ -72,9 +97,15 @@ def plot_coordinates_from_file(outside_z_range, inside_z_range_and_outside_regio
     y = [coord[1] for coord in outside_z_range]
     plt.scatter(x, y, c='slategray', marker='o', s=12)
 
-    x = [coord[0] for coord in inside_z_range_and_outside_region]
-    y = [coord[1] for coord in inside_z_range_and_outside_region]
-    plt.scatter(x, y, c='mediumseagreen', marker='o', s=12)
+    random.seed(42)
+    r = list(range(0, max(norm_id, 256)))
+    random.shuffle(r)
+    colors = cm.gist_stern(r)
+
+    x = [coord[0][0] for coord in inside_z_range_and_outside_region]
+    y = [coord[0][1] for coord in inside_z_range_and_outside_region]
+    c = [colors[coord[1]] for coord in inside_z_range_and_outside_region]
+    plt.scatter(x, y, c=c, marker='o', s=12)
 
     x = [coord[0] for coord in inside_z_range_and_inside_region]
     y = [coord[1] for coord in inside_z_range_and_inside_region]
@@ -110,7 +141,7 @@ def plot_coordinates_from_file(outside_z_range, inside_z_range_and_outside_regio
         )
     )
 
-    plt.grid()
+    plt.grid(color='k', linestyle='--', linewidth=1)
     plt.show()
 
 
