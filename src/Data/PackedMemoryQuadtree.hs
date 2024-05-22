@@ -28,7 +28,7 @@ _MISSES_THRESHOLD = 4
 ---- ZIndex
 
 data Coords (n :: Nat) = Coords Int Int
-  deriving (Show)
+  deriving (Show, Eq)
 
 newtype ZIndex (n :: Nat) = ZIndex Int
   deriving (Eq, Ord, Show)

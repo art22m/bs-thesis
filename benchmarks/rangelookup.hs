@@ -14,6 +14,9 @@ import qualified Data.MapWrapped as MW
 import Data.RTreeWrapped (RTreeWrapped)
 import qualified Data.RTreeWrapped as RTW
 
+import Data.QuadTreeWrapped (QuadTreeWrapped)
+import qualified Data.QuadTreeWrapped as QTW
+
 import System.Random
 
 _UL :: PMQ.Coords n
@@ -225,7 +228,7 @@ generateAndInsertPoints' count xl yl xr yr val = do
 
 insertPointsMW :: [(Int, Int)] -> v -> MapWrapped v -> MapWrapped v
 insertPointsMW ((x, y) : points) val mw = insertPointsMW points val (MW.insert (PMQ.Coords x y) val mw)
-insertPointsMW [] _ qt = qt
+insertPointsMW [] _ mw = mw
 
 generateAndInsertPointsMW :: Int -> Int -> Int -> v -> IO (MapWrapped v)
 generateAndInsertPointsMW count width height val = do
@@ -235,13 +238,17 @@ generateAndInsertPointsMW count width height val = do
 
 insertPointsRTW :: [(Int, Int)] -> v -> RTreeWrapped v -> RTreeWrapped v
 insertPointsRTW ((x, y) : points) val rtw = insertPointsRTW points val (RTW.insert (PMQ.Coords x y) val rtw)
-insertPointsRTW [] _ qt = qt
+insertPointsRTW [] _ rtw = rtw
 
 generateAndInsertPointsRTW :: Int -> Int -> Int -> v -> IO (RTreeWrapped v)
 generateAndInsertPointsRTW count width height val = do
   points <- randomPositions count width height
   let rtw = insertPointsRTW points val RTW.empty
   return rtw
+
+insertPointsQTW :: Eq v => [(Int, Int)] -> (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v)
+insertPointsQTW ((x, y) : points) (coord, val) qtw = insertPointsQTW points (coord, val) (QTW.insert (PMQ.Coords x y) ((PMQ.Coords x y), val) qtw)
+insertPointsQTW [] _ qtw = qtw
 
 generateNPoints :: Int -> v -> Quadtree v -> Quadtree v
 generateNPoints n = go 0
@@ -266,3 +273,6 @@ testLookupMW l r mw = length (MW.rangeLookup l r mw)
 
 testLookupRTW :: PMQ.Coords n -> PMQ.Coords n -> RTreeWrapped v -> Int
 testLookupRTW l r rtw = length (RTW.rangeLookup l r rtw)
+
+testLookupQTW :: PMQ.Coords n -> PMQ.Coords n -> QuadTreeWrapped (PMQ.Coords n, v) -> Int
+testLookupQTW l r qtw = length (QTW.rangeLookup l r qtw)
