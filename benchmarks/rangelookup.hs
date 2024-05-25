@@ -30,7 +30,8 @@ main = do
   -- benchDifferentRangeLookups
   -- benchDifferentQuadtrees
   -- benchNoUpperLeft
-  printPoints
+  benchInserts
+  -- printPoints
 
 printPoints :: IO() 
 printPoints = do 
@@ -50,7 +51,7 @@ benchNoUpperLeft = do
   -- 2^28 x 2^28
   -- 268435456 >> 1 == 134217728
   -- no_<missed_quadrant>_<quadrants_in_range>_<number_of_data>
-  let count = 15000000
+  let count = 1500000
   ul <- randomPositions' count 0 0 134217728 134217728
   ur <- randomPositions' count 134217728 0 268435456 134217728
   bl <- randomPositions' count 0 134217728 134217728 268435456
@@ -66,10 +67,10 @@ benchNoUpperLeft = do
   let toY = 70000000
   let to = PMQ.Coords toX toY
 
-  let pmq1 = insertPoints ul "t" PMQ.empty
-  let pmq2 = insertPoints br "t" pmq1
-  let pmq3 = insertPoints bl "t" pmq2
-  let pmq4 = insertPoints ur "t" pmq3
+  let pmq1 = insertPointsPMQ ul "t" PMQ.empty
+  let pmq2 = insertPointsPMQ br "t" pmq1
+  let pmq3 = insertPointsPMQ bl "t" pmq2
+  let pmq4 = insertPointsPMQ ur "t" pmq3
 
   let mw1 = insertPointsMW ul "t" MW.empty
   let mw2 = insertPointsMW br "t" mw1
@@ -81,7 +82,12 @@ benchNoUpperLeft = do
   let rtw3 = insertPointsRTW bl "t" rtw2
   let rtw4 = insertPointsRTW ur "t" rtw3
 
-  -- let pmqTest = insertPoints ur "t" PMQ.empty
+  let qtw1 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") (QTW.empty 268435457 268435457 ((PMQ.Coords 0 0), "."))
+  let qtw2 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") qtw1
+  let qtw3 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") qtw2
+  let qtw4 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") qtw3
+
+  -- let pmqTest = insertPointsPMQ ur "t" PMQ.empty
   -- print (testLookupSeq from to pmqTest)
   -- print (testLookupEff from to pmqTest)
 
@@ -89,6 +95,7 @@ benchNoUpperLeft = do
   print (testLookupEff from to pmq2)
   -- print (testLookupMW from to mw2)
   print (testLookupRTW from to rtw2)
+  print (testLookupQTW from to qtw2)
 
   -- print (testLookupSeq from to pmq4)
   -- print (testLookupEff from to pmq4)
@@ -103,12 +110,29 @@ benchNoUpperLeft = do
           -- bench "Test PMQ Seq without bl, ur" $ whnf (testLookupSeq from to) pmq2,
           bench "Test PMQ nextZIndex withour bl, ur" $ whnf (testLookupEff from to) pmq2,
           -- bench "Test Map withour bl, ur" $ whnf (testLookupMW from to) mw2,
-          bench "Test RTree withour bl, ur" $ whnf (testLookupRTW from to) rtw2,
+          bench "Test Data.RTree withour bl, ur" $ whnf (testLookupRTW from to) rtw2,
+          bench "Test Data.QuadTree withour bl, ur" $ whnf (testLookupQTW from to) qtw2,
 
           -- bench "Test PMQ Seq with bl, ur" $ whnf (testLookupSeq from to) pmq4,
           bench "Test PMQ nextZIndex with bl, ur" $ whnf (testLookupEff from to) pmq4,
           -- bench "Test Map with bl, ur" $ whnf (testLookupMW from to) mw4,
-          bench "Test RTree with bl, ur" $ whnf (testLookupRTW from to) rtw4
+          bench "Test Data.RTree with bl, ur" $ whnf (testLookupRTW from to) rtw4,
+          bench "Test Data.QuadTree with bl, ur" $ whnf (testLookupQTW from to) qtw4
+        ]
+    ]
+
+benchInserts :: IO() 
+benchInserts = do 
+  let count = 1000000
+  !dt <- randomPositions' count 0 0 268435456 268435456
+
+  let benchName = "count=" ++ show count
+  defaultMain
+    [ bgroup
+        benchName
+        [ 
+          bench "Test PMQ inserts" $ whnf (testInsertPMQ dt "t") PMQ.empty,
+          bench "Test Data.RTree inserts" $ whnf (testInsertRTW dt "t") RTW.empty
         ]
     ]
 
@@ -194,9 +218,9 @@ benchDifferentRangeLookups = do
         ]
     ]
 
-insertPoints :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPoints ((x, y) : points) val !qt = insertPoints points val (PMQ.insertE (PMQ.Coords x y) val qt)
-insertPoints [] _ !qt = qt
+insertPointsPMQ :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
+insertPointsPMQ ((x, y) : points) val !qt = insertPointsPMQ points val (PMQ.insertE (PMQ.Coords x y) val qt)
+insertPointsPMQ [] _ !qt = qt
 
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
@@ -217,13 +241,13 @@ randomPositions' count xl yl xr yr = do
 generateAndInsertPoints :: Int -> Int -> Int -> v -> IO (Quadtree v)
 generateAndInsertPoints count width height val = do
   points <- randomPositions count width height
-  let qt = insertPoints points val PMQ.empty
+  let qt = insertPointsPMQ points val PMQ.empty
   return qt
 
 generateAndInsertPoints' :: Int -> Int -> Int -> Int -> Int -> v -> IO (Quadtree v)
 generateAndInsertPoints' count xl yl xr yr val = do
   points <- randomPositions' count xl yl xr yr
-  let qt = insertPoints points val PMQ.empty
+  let qt = insertPointsPMQ points val PMQ.empty
   return qt
 
 insertPointsMW :: [(Int, Int)] -> v -> MapWrapped v -> MapWrapped v
@@ -276,3 +300,16 @@ testLookupRTW l r rtw = length (RTW.rangeLookup l r rtw)
 
 testLookupQTW :: PMQ.Coords n -> PMQ.Coords n -> QuadTreeWrapped (PMQ.Coords n, v) -> Int
 testLookupQTW l r qtw = length (QTW.rangeLookup l r qtw)
+
+
+testInsertPMQ :: [(Int, Int)] -> v -> Quadtree v -> Int
+testInsertPMQ points val !qt = 1
+  where
+    !qt' = insertPointsPMQ points val qt
+
+-- testInsertMW :: MapWrapped v -> Int
+testInsertRTW :: [(Int, Int)] -> v -> RTreeWrapped v -> Int
+testInsertRTW points val !rtw = 1
+  where
+    !rtw' = insertPointsRTW points val rtw
+-- testLookupQTW :: QuadTreeWrapped (PMQ.Coords n, v) -> Int
