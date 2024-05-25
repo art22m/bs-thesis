@@ -35,35 +35,28 @@ main = do
 printPoints :: IO() 
 printPoints = do 
   let count = 5000
-  ul <- randomPositions' count 0 0 134217728 134217728
-  ur <- randomPositions' count 134217728 0 268435456 134217728
-  bl <- randomPositions' count 0 134217728 134217728 268435456
-  br <- randomPositions' count 134217728 134217728 268435456 268435456
+  ul <- randomPositions' count 0 0 (2^27) (2^27)
+  ur <- randomPositions' count (2^27) 0 (2^28) (2^27)
+  bl <- randomPositions' count 0 (2^27) (2^27) (2^28)
+  br <- randomPositions' count (2^27) (2^27) (2^28) (2^28)
 
   print (ul ++ ur ++ bl ++ br)
-
-  -- pos <- randomPositions 10 268435456 268435456
-  -- print pos
 
 benchDifferentQuadtrees :: IO() 
 benchDifferentQuadtrees = do 
   -- 2^28 x 2^28
-  -- 268435456 >> 1 == 134217728
-  -- no_<missed_quadrant>_<quadrants_in_range>_<number_of_data>
-  let count = 1500000
-  ul <- randomPositions' count 0 0 134217728 134217728
-  ur <- randomPositions' count 134217728 0 268435456 134217728
-  bl <- randomPositions' count 0 134217728 134217728 268435456
-  br <- randomPositions' count 134217728 134217728 268435456 268435456
+  let count = 25000
+  ul <- randomPositions' count 0 0 (2^27) (2^27)
+  ur <- randomPositions' count (2^27) 0 (2^28) (2^27)
+  bl <- randomPositions' count 0 (2^27) (2^27) (2^28)
+  br <- randomPositions' count (2^27) (2^27) (2^28) (2^28)
 
-  let fromX = 67108864
-  let fromY = 67108864
+  let fromX = (2^26)
+  let fromY = (2^26)
   let from = PMQ.Coords fromX fromY
 
-  -- let toX = 201326592 - 1
-  -- let toY = 201326592 - 1
-  let toX = 70000000 
-  let toY = 70000000
+  let toX = ((2^28) + (2^27)) `div` 2 - 1
+  let toY = ((2^28) + (2^27)) `div` 2 - 1
   let to = PMQ.Coords toX toY
 
   let pmq1 = insertPointsPMQ ul "t" PMQ.empty
@@ -81,49 +74,45 @@ benchDifferentQuadtrees = do
   let rtw3 = insertPointsRTW bl "t" rtw2
   let rtw4 = insertPointsRTW ur "t" rtw3
 
-  let qtw1 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") (QTW.empty 268435457 268435457 ((PMQ.Coords 0 0), "."))
+  let qtw1 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
   let qtw2 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") qtw1
   let qtw3 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") qtw2
   let qtw4 = insertPointsQTW ul ((PMQ.Coords 0 0), "t") qtw3
 
-  -- let pmqTest = insertPointsPMQ ur "t" PMQ.empty
-  -- print (testLookupSeq from to pmqTest)
-  -- print (testLookupEff from to pmqTest)
-
   -- print (testLookupSeq from to pmq2)
-  print (testLookupEff from to pmq2)
+  -- print (testLookupEff from to pmq2)
   -- print (testLookupMW from to mw2)
-  print (testLookupRTW from to rtw2)
-  print (testLookupQTW from to qtw2)
+  -- print (testLookupRTW from to rtw2)
+  -- print (testLookupQTW from to qtw2)
 
   -- print (testLookupSeq from to pmq4)
   -- print (testLookupEff from to pmq4)
   -- print (testLookupMW from to mw4)
   -- print (testLookupRTW from to rtw4)
 
-  let benchName = "(" ++ show fromX ++"," ++ show fromY ++ "), (" ++ show toX ++ "," ++ show toY ++ "), count=" ++ show count
+  let benchName = "(" ++ show fromX ++"," ++ show fromY ++ "), (" ++ show toX ++ "," ++ show toY ++ "), count=" ++ show (count * 4)
   defaultMain
     [ bgroup
         benchName
         [ 
           -- bench "Test PMQ Seq without bl, ur" $ whnf (testLookupSeq from to) pmq2,
-          bench "Test PMQ nextZIndex withour bl, ur" $ whnf (testLookupEff from to) pmq2,
+          -- bench "Test PMQ nextZIndex withour bl, ur" $ whnf (testLookupEff from to) pmq2,
           -- bench "Test Map withour bl, ur" $ whnf (testLookupMW from to) mw2,
-          bench "Test Data.RTree withour bl, ur" $ whnf (testLookupRTW from to) rtw2,
-          bench "Test Data.QuadTree withour bl, ur" $ whnf (testLookupQTW from to) qtw2,
+          -- bench "Test Data.RTree withour bl, ur" $ whnf (testLookupRTW from to) rtw2,
+          -- bench "Test Data.QuadTree withour bl, ur" $ whnf (testLookupQTW from to) qtw2,
 
-          -- bench "Test PMQ Seq with bl, ur" $ whnf (testLookupSeq from to) pmq4,
-          bench "Test PMQ nextZIndex with bl, ur" $ whnf (testLookupEff from to) pmq4,
-          -- bench "Test Map with bl, ur" $ whnf (testLookupMW from to) mw4,
-          bench "Test Data.RTree with bl, ur" $ whnf (testLookupRTW from to) rtw4,
-          bench "Test Data.QuadTree with bl, ur" $ whnf (testLookupQTW from to) qtw4
+          bench "Test PMQ Seq" $ whnf (testLookupSeq from to) pmq4,
+          bench "Test PMQ Eff" $ whnf (testLookupEff from to) pmq4,
+          bench "Test Map" $ whnf (testLookupMW from to) mw4,
+          bench "Test Data.RTree" $ whnf (testLookupRTW from to) rtw4,
+          bench "Test Data.QuadTree" $ whnf (testLookupQTW from to) qtw4
         ]
     ]
 
 benchInserts :: IO() 
 benchInserts = do 
   let count = 1000000
-  !dt <- randomPositions' count 0 0 268435456 268435456
+  !dt <- randomPositions' count 0 0 (2^28) (2^28)
 
   let benchName = "count=" ++ show count
   defaultMain
