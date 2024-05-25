@@ -28,9 +28,8 @@ _BR = PMQ.Coords 4000000 6000000 -- 644403355648
 main :: IO ()
 main = do
   -- benchDifferentRangeLookups
-  -- benchDifferentQuadtrees
-  -- benchNoUpperLeft
-  benchInserts
+  benchDifferentQuadtrees
+  -- benchInserts
   -- printPoints
 
 printPoints :: IO() 
@@ -46,8 +45,8 @@ printPoints = do
   -- pos <- randomPositions 10 268435456 268435456
   -- print pos
 
-benchNoUpperLeft :: IO() 
-benchNoUpperLeft = do 
+benchDifferentQuadtrees :: IO() 
+benchDifferentQuadtrees = do 
   -- 2^28 x 2^28
   -- 268435456 >> 1 == 134217728
   -- no_<missed_quadrant>_<quadrants_in_range>_<number_of_data>
@@ -133,55 +132,6 @@ benchInserts = do
         [ 
           bench "Test PMQ inserts" $ whnf (testInsertPMQ dt "t") PMQ.empty,
           bench "Test Data.RTree inserts" $ whnf (testInsertRTW dt "t") RTW.empty
-        ]
-    ]
-
-benchDifferentQuadtrees :: IO ()
-benchDifferentQuadtrees = do
-  pmq1 <- generateAndInsertPoints 10 10000000 10000000 "data"
-  pmq2 <- generateAndInsertPoints 100 10000000 10000000 "data"
-  pmq3 <- generateAndInsertPoints 1000 10000000 10000000 "data"
-  pmq4 <- generateAndInsertPoints 10000 10000000 10000000 "data"
-  pmq5 <- generateAndInsertPoints 100000 10000000 10000000 "data"
-  pmq6 <- generateAndInsertPoints 1000000 10000000 10000000 "data"
-  pmq7 <- generateAndInsertPoints 10000000 10000000 10000000 "data"
-
-  mw1 <- generateAndInsertPointsMW 10 10000000 10000000 "data"
-  mw2 <- generateAndInsertPointsMW 100 10000000 10000000 "data"
-  mw3 <- generateAndInsertPointsMW 1000 10000000 10000000 "data"
-  mw4 <- generateAndInsertPointsMW 10000 10000000 10000000 "data"
-  mw5 <- generateAndInsertPointsMW 100000 10000000 10000000 "data"
-  mw6 <- generateAndInsertPointsMW 1000000 10000000 10000000 "data"
-  mw7 <- generateAndInsertPointsMW 10000000 10000000 10000000 "data"
-
-  -- print (testLookupSeq _UL _BR pmq7)
-  -- print (testLookupEff _UL _BR pmq7)
-  -- print (testLookupMW _UL _BR mw7)
-  
-  defaultMain
-    [ bgroup
-        "1e7"
-        [ bench "Test 10 seq" $ whnf (testLookupSeq _UL _BR) pmq1,
-          bench "Test 10 eff" $ whnf (testLookupEff _UL _BR) pmq1,
-          bench "Test 10 qmap" $ whnf (testLookupMW _UL _BR) mw1,
-          bench "Test 100 seq" $ whnf (testLookupSeq _UL _BR) pmq2,
-          bench "Test 100 eff" $ whnf (testLookupEff _UL _BR) pmq2,
-          bench "Test 100 qmap" $ whnf (testLookupMW _UL _BR) mw2,
-          bench "Test 1000 seq" $ whnf (testLookupSeq _UL _BR) pmq3,
-          bench "Test 1000 eff" $ whnf (testLookupEff _UL _BR) pmq3,
-          bench "Test 1000 qmap" $ whnf (testLookupMW _UL _BR) mw3,
-          bench "Test 10_000 seq" $ whnf (testLookupSeq _UL _BR) pmq4,
-          bench "Test 10_000 eff" $ whnf (testLookupEff _UL _BR) pmq4,
-          bench "Test 10_000 qmap" $ whnf (testLookupMW _UL _BR) mw4,
-          bench "Test 100_000 seq" $ whnf (testLookupSeq _UL _BR) pmq5,
-          bench "Test 100_000 eff" $ whnf (testLookupEff _UL _BR) pmq5,
-          bench "Test 100_000 qmap" $ whnf (testLookupMW _UL _BR) mw5,
-          bench "Test 1_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq6,
-          bench "Test 1_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq6,
-          bench "Test 1_000_000 qmap" $ whnf (testLookupMW _UL _BR) mw6,
-          bench "Test 10_000_000 seq" $ whnf (testLookupSeq _UL _BR) pmq7,
-          bench "Test 10_000_000 eff" $ whnf (testLookupEff _UL _BR) pmq7,
-          bench "Test 10_000_000 qmap" $ whnf (testLookupMW _UL _BR) mw7
         ]
     ]
 
