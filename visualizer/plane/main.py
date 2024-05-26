@@ -1,23 +1,24 @@
+import math
 from enum import Enum
 
 import random
-from matplotlib import rcParams
 import matplotlib.cm as cm
+import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
 import zCurve as z
 import ast
 from matplotlib.patches import Rectangle
 
-FILENAME = "data.txt"
+FILENAME = "plane/data_ulbr.txt"
 
-FROM_X = 2 ** 26
+FROM_X = 2 ** 27
 FROM_Y = 2 ** 26
-#
-# TO_X = (2 ** 28 + 2 ** 27) // 2 - 1
-# TO_Y = (2 ** 28 + 2 ** 27) // 2 - 1
 
-TO_X = (2 ** 27) - 1
-TO_Y = (2 ** 27) - 1
+TO_X = (2 ** 28 + 2 ** 27) // 2 - 1
+TO_Y = (2 ** 28 + 2 ** 27) // 2 - 1
+
+# TO_X = (2 ** 27) - 1
+# TO_Y = (2 ** 27) - 1
 
 SIZE = 2 ** 28
 
@@ -91,7 +92,7 @@ def split_coordinates(from_x, from_y, to_x, to_y, coords):
 
 
 def plot_coordinates_from_file(outside_z_range, inside_z_range_and_outside_region, inside_z_range_and_inside_region):
-    ax = plt.figure(figsize=(10.24, 10.24)).gca()
+    ax = plt.figure(figsize=(8, 8)).gca()
 
     x = [coord[0] for coord in outside_z_range]
     y = [coord[1] for coord in outside_z_range]
@@ -111,14 +112,14 @@ def plot_coordinates_from_file(outside_z_range, inside_z_range_and_outside_regio
     y = [coord[1] for coord in inside_z_range_and_inside_region]
     plt.scatter(x, y, c='green', marker='o', s=12)
 
-    plt.xlabel("X-axis")
+    plt.xlabel("X Axis")
     plt.xlim(0, SIZE)
 
-    plt.ylabel("Y-axis")
+    plt.ylabel("Y Axis")
     plt.ylim(SIZE, 0)
 
     step = SIZE // 2 ** RECURSE
-    ticks = [step]
+    ticks = [0, step]
     while ticks[-1] < SIZE:
         ticks.append(ticks[-1] + step)
 
@@ -141,6 +142,16 @@ def plot_coordinates_from_file(outside_z_range, inside_z_range_and_outside_regio
         )
     )
 
+    def pretty_formatter(x, pos):
+        if x == 0:
+            return 0
+        res = int(math.log2(x))
+        if 2 ** res == x:
+            return "$2^{%s}$" % res
+        return ""
+
+    plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(pretty_formatter))
+    plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(pretty_formatter))
     plt.grid(color='k', linestyle='--', linewidth=1)
     plt.show()
 
