@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import re
 
-df = pd.read_csv("5.csv")
+df = pd.read_csv("6.csv")
 
 
 def pretty_time(value):
@@ -33,14 +33,32 @@ def extract_data_structure(name_row):
 df['Count'] = df['Name'].apply(extract_number)
 df['DataStructure'] = df['Name'].apply(extract_data_structure)
 
-print(df['DataStructure'])
-
 y_ticks = sorted(df['Mean'].unique())
 
 plt.figure(figsize=(10, 8))
 
+line_settings = {
+    "PMQ Seq": {"ls": '--', "lw": 3, "lc": "blue"},
+    "PMQ Eff": {"ls": '--', "lw": 3, "lc": "green"},
+    "Data.Map": {"ls": '-', "lw": 3, "lc": "red"},
+    "Data.RTree": {"ls": ':', "lw": 3, "lc": "brown"},
+    "Data.QuadTree": {"ls": '-.', "lw": 3, "lc": "black"},
+}
 for ds, group in df.groupby('DataStructure'):
-    plt.plot(group['Count'], group['Mean'], marker='o', label=ds)
+
+    plt.plot(
+        group['Count'],
+        group['Mean'],
+        marker='o',
+        label=ds,
+        linestyle=line_settings[ds]["ls"],
+        linewidth=line_settings[ds]["lw"],
+        color=line_settings[ds]["lc"],
+    )
+
+    if ds != "Data.Map":
+        for x, y in zip(group['Count'], group['Mean']):
+            plt.text(x, y, pretty_time(y), fontsize=10)
 
 plt.xlabel('Number Of Elements')
 plt.ylabel('Range Lookup Mean Time')
