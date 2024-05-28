@@ -195,7 +195,7 @@ generateNPoints n = go 0
       | p < n && even p = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
       | p < n && odd p = go (p + 1) v' (PMQ.insertE (PMQ.Coords p p) v' qt')
       | otherwise = qt'
-      
+
 randomPositions :: Int -> Int -> Int -> IO [(Int, Int)]
 randomPositions count width height = do
     let gen1 = mkStdGen 42
@@ -223,8 +223,8 @@ generateAndInsertPointsPMQ count width height val = do
   return qt
 
 insertPointsMW :: [(Int, Int)] -> v -> MapWrapped v -> MapWrapped v
-insertPointsMW ((x, y) : points) val mw = insertPointsMW points val (MW.insert (PMQ.Coords x y) val mw)
-insertPointsMW [] _ mw = mw
+insertPointsMW ((x, y) : points) val !mw = insertPointsMW points val (MW.insert (PMQ.Coords x y) val mw)
+insertPointsMW [] _ !mw = mw
 
 generateAndInsertPointsMW :: Int -> Int -> Int -> v -> IO (MapWrapped v)
 generateAndInsertPointsMW count width height val = do
@@ -233,8 +233,8 @@ generateAndInsertPointsMW count width height val = do
   return mw
 
 insertPointsRTW :: [(Int, Int)] -> v -> RTreeWrapped v -> RTreeWrapped v
-insertPointsRTW ((x, y) : points) val rtw = insertPointsRTW points val (RTW.insert (PMQ.Coords x y) val rtw)
-insertPointsRTW [] _ rtw = rtw
+insertPointsRTW ((x, y) : points) val !rtw = insertPointsRTW points val (RTW.insert (PMQ.Coords x y) val rtw)
+insertPointsRTW [] _ !rtw = rtw
 
 generateAndInsertPointsRTW :: Int -> Int -> Int -> v -> IO (RTreeWrapped v)
 generateAndInsertPointsRTW count width height val = do
@@ -243,8 +243,8 @@ generateAndInsertPointsRTW count width height val = do
   return rtw
 
 insertPointsQTW :: Eq v => [(Int, Int)] -> (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v)
-insertPointsQTW ((x, y) : points) (coord, val) qtw = insertPointsQTW points (coord, val) (QTW.insert (PMQ.Coords x y) ((PMQ.Coords x y), val) qtw)
-insertPointsQTW [] _ qtw = qtw
+insertPointsQTW ((x, y) : points) (coord, val) !qtw = insertPointsQTW points (coord, val) (QTW.insert (PMQ.Coords x y) ((PMQ.Coords x y), val) qtw)
+insertPointsQTW [] _ !qtw = qtw
 
 testLookupEff :: PMQ.Coords n -> PMQ.Coords n -> Quadtree v -> Int
 testLookupEff l r qt = length (PMQ.rangeLookup l r qt)

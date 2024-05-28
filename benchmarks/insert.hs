@@ -37,40 +37,40 @@ benchInserts = do
         [
           bench "PMQ" $ whnf (testInsertPMQ points1k "t") PMQ.empty,
           bench "Data.Map" $ whnf (testInsertMW points1k "t") MW.empty,
-          bench "Data.RTree" $ whnf (testInsertRTW points1k "t") RTW.empty,
-          bench "Data.QuadTree" $ whnf (testInsertQTW points1k ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
+          bench "Data.RTree" $ whnf (testInsertRTW points1k "t") RTW.empty
+        --   bench "Data.QuadTree" $ whnf (testInsertQTW points1k ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
         ],
 
---        bgroup "10k"
---        [
---          bench "PMQ" $ whnf (testInsertPMQ points10k "t") PMQ.empty,
---          bench "Data.Map" $ whnf (testInsertMW points10k "t") MW.empty,
---          bench "Data.RTree" $ whnf (testInsertRTW points10k "t") RTW.empty,
---          bench "Data.QuadTree" $ whnf (testInsertQTW points10k ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
---        ],
---
---        bgroup "100k"
---        [
---          bench "PMQ" $ whnf (testInsertPMQ points100k "t") PMQ.empty,
---          bench "Data.Map" $ whnf (testInsertMW points100k "t") MW.empty,
---          bench "Data.RTree" $ whnf (testInsertRTW points100k "t") RTW.empty,
---          bench "Data.QuadTree" $ whnf (testInsertQTW points100k ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
---        ],
---
---        bgroup "1kk"
---        [
---          bench "PMQ" $ whnf (testInsertPMQ points1kk "t") PMQ.empty,
---          bench "Data.Map" $ whnf (testInsertMW points1kk "t") MW.empty,
---          bench "Data.RTree" $ whnf (testInsertRTW points1kk "t") RTW.empty,
---          bench "Data.QuadTree" $ whnf (testInsertQTW points1kk ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
---        ],
+       bgroup "10k"
+       [
+         bench "PMQ" $ whnf (testInsertPMQ points10k "t") PMQ.empty,
+         bench "Data.Map" $ whnf (testInsertMW points10k "t") MW.empty,
+         bench "Data.RTree" $ whnf (testInsertRTW points10k "t") RTW.empty
+        --  bench "Data.QuadTree" $ whnf (testInsertQTW points10k ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
+       ],
+
+       bgroup "100k"
+       [
+         bench "PMQ" $ whnf (testInsertPMQ points100k "t") PMQ.empty,
+         bench "Data.Map" $ whnf (testInsertMW points100k "t") MW.empty,
+         bench "Data.RTree" $ whnf (testInsertRTW points100k "t") RTW.empty
+        --  bench "Data.QuadTree" $ whnf (testInsertQTW points100k ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
+       ],
+
+       bgroup "1kk"
+       [
+         bench "PMQ" $ whnf (testInsertPMQ points1kk "t") PMQ.empty,
+         bench "Data.Map" $ whnf (testInsertMW points1kk "t") MW.empty,
+         bench "Data.RTree" $ whnf (testInsertRTW points1kk "t") RTW.empty
+        --  bench "Data.QuadTree" $ whnf (testInsertQTW points1kk ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
+       ],
 
         bgroup "10kk"
         [
           bench "PMQ" $ whnf (testInsertPMQ points10kk "t") PMQ.empty,
           bench "Data.Map" $ whnf (testInsertMW points10kk "t") MW.empty,
-          bench "Data.RTree" $ whnf (testInsertRTW points10kk "t") RTW.empty,
-          bench "Data.QuadTree" $ whnf (testInsertQTW points10kk ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
+          bench "Data.RTree" $ whnf (testInsertRTW points10kk "t") RTW.empty
+        --   bench "Data.QuadTree" $ whnf (testInsertQTW points10kk ((PMQ.Coords 0 0), "t")) (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
         ]
 
     ]
@@ -95,6 +95,7 @@ testInsertPMQ :: [(Int, Int)] -> v -> Quadtree v -> Int
 testInsertPMQ points val pmq = 1
   where
     !pmq' = insertPointsPMQ points val PMQ.empty
+    !v = PMQ.lookup (PMQ.Coords 0 0) pmq'
 
 testInsertMW :: [(Int, Int)] -> v -> MapWrapped v -> Int
 testInsertMW points val !mw = 1
@@ -107,7 +108,7 @@ testInsertRTW points val !rtw = 1
     !rtw' = insertPointsRTW points val rtw
 
 testInsertQTW :: [(Int, Int)] -> (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v) -> Int
-testInsertQTW points val !qtw = 1
+testInsertQTW points val !qtw = testLookupQTW (PMQ.Coords 0 0) (PMQ.Coords 0 0) qtw'
   where
     !qtw' = insertPointsQTW points ((PMQ.Coords 0 0), "t") (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
 
@@ -116,13 +117,16 @@ insertPointsPMQ ((x, y) : points) val !qt = insertPointsPMQ points val (PMQ.inse
 insertPointsPMQ [] _ !qt = qt
 
 insertPointsMW :: [(Int, Int)] -> v -> MapWrapped v -> MapWrapped v
-insertPointsMW ((x, y) : points) val mw = insertPointsMW points val (MW.insert (PMQ.Coords x y) val mw)
-insertPointsMW [] _ mw = mw
+insertPointsMW ((x, y) : points) val !mw = insertPointsMW points val (MW.insert (PMQ.Coords x y) val mw)
+insertPointsMW [] _ !mw = mw
 
 insertPointsRTW :: [(Int, Int)] -> v -> RTreeWrapped v -> RTreeWrapped v
-insertPointsRTW ((x, y) : points) val rtw = insertPointsRTW points val (RTW.insert (PMQ.Coords x y) val rtw)
-insertPointsRTW [] _ rtw = rtw
+insertPointsRTW ((x, y) : points) val !rtw = insertPointsRTW points val (RTW.insert (PMQ.Coords x y) val rtw)
+insertPointsRTW [] _ !rtw = rtw
 
 insertPointsQTW :: Eq v => [(Int, Int)] -> (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v)
-insertPointsQTW ((x, y) : points) (coord, val) qtw = insertPointsQTW points (coord, val) (QTW.insert (PMQ.Coords x y) ((PMQ.Coords x y), val) qtw)
-insertPointsQTW [] _ qtw = qtw
+insertPointsQTW ((x, y) : points) (coord, val) !qtw = insertPointsQTW points (coord, val) (QTW.insert (PMQ.Coords x y) ((PMQ.Coords x y), val) qtw)
+insertPointsQTW [] _ !qtw = qtw
+
+testLookupQTW :: PMQ.Coords n -> PMQ.Coords n -> QuadTreeWrapped (PMQ.Coords n, v) -> Int
+testLookupQTW l r qtw = length (QTW.rangeLookup l r qtw)

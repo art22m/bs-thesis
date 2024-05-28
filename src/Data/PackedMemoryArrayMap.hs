@@ -19,7 +19,7 @@ import qualified Data.Map as DMap
 
 
 _THRESHOLD :: Int
-_THRESHOLD = 1
+_THRESHOLD = 10
 
 data Stream a = forall s . Stream (s -> Step a s) s
 
@@ -72,8 +72,8 @@ type Chunk k a = Vector (k, a)
 -- todo replace with Arrays?
 data NS k a = M0
             | M1 !(Vector (k, a))
-            | M2 !(Vector (k, a)) !(Vector (k, a)) (Vector (k, a)) !(NS k a)
-            | M3 !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) (Vector (k, a)) !(NS k a)
+            | M2 !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) !(NS k a)
+            | M3 !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) !(NS k a)
 
 -- instance (Show k, Show a) => Show (NS k a) where
 --     show ns = reverse $ go ns [] where

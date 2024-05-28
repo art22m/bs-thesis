@@ -22,3 +22,6 @@ rangeLookup (PMQ.Coords x1 y1) (PMQ.Coords x2 y2) qt = rangeLookup' zl zr qt
 
 rangeLookup' :: PMQ.ZIndex n -> PMQ.ZIndex n -> QuadTreeWrapped (PMQ.Coords n, v) -> [(PMQ.Coords n, v)]
 rangeLookup' zl zr qt = QT.filterTree (\(coord, val) -> PMQ.isRelevant zl zr (PMQ.toZIndex coord)) (getQT qt)
+
+lookup :: Eq v => PMQ.Coords n -> QuadTreeWrapped (PMQ.Coords n, v) -> (PMQ.Coords n, v)
+lookup (PMQ.Coords x y) !qtw = QT.getLocation (x, y) (getQT qtw)
