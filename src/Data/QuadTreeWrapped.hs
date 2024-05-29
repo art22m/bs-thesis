@@ -5,7 +5,7 @@ module Data.QuadTreeWrapped where
 import qualified Data.QuadTree as QT
 import qualified Data.PackedMemoryQuadtree as PMQ
 
-newtype QuadTreeWrapped a = QuadTreeWrapped {getQT :: QT.QuadTree a}
+data QuadTreeWrapped a = QuadTreeWrapped {getQT :: !(QT.QuadTree a)}
   deriving (Show)
 
 empty :: Eq v => Int -> Int -> (PMQ.Coords n, v) -> QuadTreeWrapped (PMQ.Coords n, v)
@@ -25,3 +25,6 @@ rangeLookup' zl zr qt = QT.filterTree (\(coord, val) -> PMQ.isRelevant zl zr (PM
 
 lookup :: Eq v => PMQ.Coords n -> QuadTreeWrapped (PMQ.Coords n, v) -> (PMQ.Coords n, v)
 lookup (PMQ.Coords x y) !qtw = QT.getLocation (x, y) (getQT qtw)
+
+tile :: QuadTreeWrapped (PMQ.Coords n, v) -> [QT.Tile (PMQ.Coords n, v)]
+tile !qtw = QT.tile (getQT qtw)

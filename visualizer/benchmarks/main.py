@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import re
 
-df = pd.read_csv("6.csv")
+df = pd.read_csv("inserts.csv")
 
 
 def pretty_time(value):
@@ -38,8 +38,8 @@ y_ticks = sorted(df['Mean'].unique())
 plt.figure(figsize=(10, 8))
 
 line_settings = {
-    "PMQ Seq": {"ls": '--', "lw": 3, "lc": "blue"},
-    "PMQ Eff": {"ls": '--', "lw": 3, "lc": "green"},
+    "PMQ": {"ls": '--', "lw": 3, "lc": "blue"},
+    # "PMQ Eff": {"ls": '--', "lw": 3, "lc": "green"},
     "Data.Map": {"ls": '-', "lw": 3, "lc": "red"},
     "Data.RTree": {"ls": ':', "lw": 3, "lc": "brown"},
     "Data.QuadTree": {"ls": '-.', "lw": 3, "lc": "black"},
