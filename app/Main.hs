@@ -9,7 +9,7 @@ import System.Random
 
 main :: IO ()
 main = do
-  -- test1
+  test1
   -- test2
   test3
   test4
@@ -44,8 +44,6 @@ test1 = do
 
   print (PMQ.rangeLookupDummy coords1 coords2 pmq5)
   print (PMQ.rangeLookupSeq coords1 coords2 pmq5)
-
-  print (PMQ.calculateRanges (PMQ.toZIndex coords1) (PMQ.toZIndex coords2))
   print (PMQ.rangeLookup coords1 coords2 pmq5)
 
 test2 :: IO ()

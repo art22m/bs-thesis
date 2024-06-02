@@ -15,8 +15,10 @@ import Data.PackedMemoryArray (PMA)
 import qualified Data.PackedMemoryArray as PMA
 import Data.PackedMemoryArrayMap (Map)
 import qualified Data.PackedMemoryArrayMap as Map
-import Data.Vector (Vector, (!))
-import qualified Data.Vector as Vector hiding ((++))
+import Data.Vector ((!))
+import qualified Data.Vector as Vector
+import qualified Data.Vector.Mutable as MVector
+import Control.Monad.ST (runST)
 import GHC.TypeLits (Nat)
 import System.Random (mkStdGen, randomRs)
 
@@ -170,6 +172,33 @@ rangeLookupDummy' (ZIndex zl) (ZIndex zr) qt = go zl zr (getPMAMap qt) []
       where
         shouldLookup = isRelevant (ZIndex zl) (ZIndex zr) (ZIndex l)
 
+
+findLeft :: Int -> Vector.Vector (Int, v) -> Int -> Int -> Int
+findLeft !targetKey !vec !l !r
+  | l < r =
+      let !m = (l + r) `div` 2
+          !(midKey, _) = vec Vector.! m
+      in
+        if targetKey <= midKey
+          then findLeft targetKey vec l m
+          else findLeft targetKey vec (m + 1) r
+  | otherwise =
+    let !(midKey, _) = vec Vector.! l in
+    if midKey < targetKey then l + 1 else l
+
+findRight :: Int -> Vector.Vector (Int, v) -> Int -> Int -> Int
+findRight !targetKey !vec !l !r
+  | l < r =
+      let !m = (l + r + 1) `div` 2
+          !(midKey, _) = vec Vector.! m
+      in
+        if midKey <= targetKey
+          then findRight targetKey vec m r
+          else findRight targetKey vec l (m - 1)
+  | otherwise =
+      let !(midKey, _) = vec Vector.! l in
+      if midKey > targetKey then l else l + 1
+
 rangeLookupSeq :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq (Coords x1 y1) (Coords x2 y2) qt = rangeLookupSeq'' zl zr zl zr qt
   where
@@ -181,9 +210,8 @@ rangeLookupSeq' zl zr qt = rangeLookupSeq'' zl zr zl zr qt
 
 rangeLookupSeq'' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
-  rangePMA (Map.getPMA pmaMap)
-    ++ rangeDMap (Map.getMap pmaMap)
-    ++ rangeNS (Map.getNS pmaMap)
+  rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
+  -- rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
 
@@ -191,7 +219,7 @@ rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
     rangePMA pma = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredPMA)
       where
         pmaCells = Vector.catMaybes (PMA.cells pma)
-        filteredPMA = Vector.filter (\(zind, _) -> (zl <= zind && zind <= zr && isRelevant' zl' zr' zind)) pmaCells
+        filteredPMA = Vector.filter (\(zind, _) -> (isRelevant' zl' zr' zind)) pmaCells
 
     rangeDMap :: DMap.Map Int v -> [(Coords n, v)]
     rangeDMap dmap = map (\(c, v) -> (fromZIndex' c, v)) (DMap.toList filteredMap)
@@ -200,16 +228,59 @@ rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
         (lmap, _) = DMap.split (zr + 1) rmap
         filteredMap = DMap.filterWithKey (\k _ -> isRelevant' zl' zr' k) lmap
 
-    rangeNS :: Map.NS Int v -> [(Coords n, v)]
-    rangeNS Map.M0 = []
-    rangeNS (Map.M1 as) = rangeChunk as
-    rangeNS (Map.M2 as bs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeNS rest
-    rangeNS (Map.M3 as bs cs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeChunk cs ++ rangeNS rest
+    findSplitIndexLeft :: Int -> Vector.Vector (Int, v) -> Int -> Int -> Int
+    findSplitIndexLeft !targetKey !vec !l !r
+      | l < r =
+          let !m = (l + r) `div` 2
+              !(midKey, _) = vec Vector.! m
+          in
+            if targetKey <= midKey
+              then findSplitIndexLeft targetKey vec l m
+              else findSplitIndexLeft targetKey vec (m + 1) r
+      | otherwise =
+        let !(midKey, _) = vec Vector.! l in
+        if midKey < targetKey then l + 1 else l
 
-    rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
-    rangeChunk ch = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredVector)
+    findSplitIndexRight :: Int -> Vector.Vector (Int, v) -> Int -> Int -> Int
+    findSplitIndexRight !targetKey !vec !l !r
+      | l < r =
+          let !m = (l + r + 1) `div` 2
+              !(midKey, _) = vec Vector.! m
+          in
+            if midKey <= targetKey
+              then findSplitIndexRight targetKey vec m r
+              else findSplitIndexRight targetKey vec l (m - 1)
+      | otherwise =
+          let !(midKey, _) = vec Vector.! l in
+          if midKey > targetKey then l else l + 1
+
+    rangeChunk :: Vector.Vector (Int, v) -> Vector.Vector (Coords n, v)
+    rangeChunk !ch = runST $ do
+        let !lIndex = findSplitIndexLeft zl ch 0 (Vector.length ch - 1)
+        let !rIndex = findSplitIndexRight zr ch lIndex (Vector.length ch - 1)
+        let !subVec = Vector.slice lIndex (rIndex - lIndex) ch
+        mvec <- MVector.new (Vector.length subVec)
+        let go i j
+              | i >= Vector.length subVec = return j
+              | otherwise = do
+                  let (key, value) = subVec Vector.! i
+                  if isRelevant' zl zr key
+                    then do
+                      MVector.write mvec j (fromZIndex' key, value)
+                      go (i + 1) (j + 1)
+                    else go (i + 1) j
+        finalLength <- go 0 0
+        Vector.freeze (MVector.slice 0 finalLength mvec)
+
+    rangeNS :: Map.NS Int v -> [(Coords n, v)]
+    rangeNS !ns = Vector.toList $ go ns Vector.empty
       where
-        filteredVector = Vector.filter (\(zind, _) -> zl <= zind && zind <= zr && isRelevant' zl' zr' zind) ch
+        go :: Map.NS Int v -> Vector.Vector (Coords n, v) -> Vector.Vector (Coords n, v)
+        go Map.M0 acc = acc
+        go (Map.M1 as) acc = acc Vector.++ rangeChunk as
+        go (Map.M2 as bs _ rest) acc = acc Vector.++ rangeChunk as Vector.++ rangeChunk bs Vector.++ go rest Vector.empty
+        go (Map.M3 as bs cs _ rest) acc = acc Vector.++ rangeChunk as Vector.++ rangeChunk bs Vector.++ rangeChunk cs Vector.++ go rest Vector.empty
+
 
 rangeLookup :: Coords n -> Coords n -> Quadtree v -> [(Coords n, v)]
 rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIndex cr) qt
@@ -224,24 +295,6 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
     ++ rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
-
-    findClosestJust :: Vector (Maybe (Int, v)) -> Int -> Maybe Int
-    findClosestJust vec index
-      | index < 0 = Nothing
-      | otherwise = case vec ! index of
-          Just _ -> Just index
-          Nothing -> findClosestJust vec (index - 1)
-
-    findStartIndex :: Int -> Vector (Maybe (Int, v)) -> Int -> Int -> Maybe Int
-    findStartIndex targetKey vec low high
-      | high < low = findClosestJust vec low
-      | otherwise =
-          let mid = low + (high - low) `div` 2
-           in case vec ! mid of
-                Nothing -> findClosestJust vec targetKey
-                Just (midKey, _)
-                  | midKey < targetKey -> findStartIndex targetKey vec (mid + 1) high
-                  | otherwise -> findStartIndex targetKey vec low (mid - 1)
 
     rangePMA :: PMA Int v -> [(Coords n, v)]
     rangePMA pma = map (\(c, v) -> (fromZIndex' c, v)) (Vector.toList filteredPMA)
@@ -301,8 +354,7 @@ rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
           go qt' bigmin r bigmin 0 tmp ++ rangeLookupSeq'' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
       | m >= _MISSES_THRESHOLD && (p < litmax) =
           go qt' l litmax p m tmp ++ go qt' bigmin r bigmin 0 tmp
-      | m >= _MISSES_THRESHOLD && (bigmin < p) -- 71
-        =
+      | m >= _MISSES_THRESHOLD && (bigmin < p) =
           go qt' bigmin r p m tmp ++ rangeLookupSeq'' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex litmax) qt'
       | inBounds = go qt' l r (p + 1) (m + 1) tmp
       | otherwise = rangeLookupSeq'' (ZIndex zl) (ZIndex zr) (ZIndex l) (ZIndex r) qt' ++ tmp

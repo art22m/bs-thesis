@@ -3,12 +3,14 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import re
 
-df = pd.read_csv("inserts.csv")
+df = pd.read_csv("mid2.csv")
 
 
 def pretty_time(value):
-    if value < 1e-3:
-        return f"{value * 1e6:.3f} ns"
+    if value < 1e-6:
+        return f"{value * 1e9:.3f} ns"
+    elif value < 1e-3:
+        return f"{value * 1e6:.3f} μs"
     elif value < 1:
         return f"{value * 1e3:.3f} ms"
     else:
@@ -38,8 +40,8 @@ y_ticks = sorted(df['Mean'].unique())
 plt.figure(figsize=(10, 8))
 
 line_settings = {
-    "PMQ": {"ls": '--', "lw": 3, "lc": "blue"},
-    # "PMQ Eff": {"ls": '--', "lw": 3, "lc": "green"},
+    "PMQ Seq": {"ls": '--', "lw": 3, "lc": "blue"},
+    "PMQ Eff": {"ls": '--', "lw": 3, "lc": "green"},
     "Data.Map": {"ls": '-', "lw": 3, "lc": "red"},
     "Data.RTree": {"ls": ':', "lw": 3, "lc": "brown"},
     "Data.QuadTree": {"ls": '-.', "lw": 3, "lc": "black"},
@@ -69,3 +71,6 @@ plt.yscale('log')
 # plt.gca().yaxis.set_major_locator(ticker.FixedLocator(y_ticks))
 plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(pretty_time_formatter))
 plt.show()
+
+if __name__ == "__main__":
+    pass

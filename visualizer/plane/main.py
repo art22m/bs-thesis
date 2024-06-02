@@ -9,13 +9,13 @@ import zCurve as z
 import ast
 from matplotlib.patches import Rectangle
 
-FILENAME = "plane/data_ulbr.txt"
+FILENAME = "plane/data_all.txt"
 
-FROM_X = 2 ** 27
-FROM_Y = 2 ** 26
+FROM_X = 2 ** 27 - 10
+FROM_Y = 2 ** 27 - 10
 
-TO_X = (2 ** 28 + 2 ** 27) // 2 - 1
-TO_Y = (2 ** 28 + 2 ** 27) // 2 - 1
+TO_X = 2 ** 27 + 1
+TO_Y = 2 ** 27 + 1
 
 # TO_X = (2 ** 27) - 1
 # TO_Y = (2 ** 27) - 1
