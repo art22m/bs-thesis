@@ -108,6 +108,9 @@ benchDifferentQuadtreesWithDiffCount = do
   let !pmq1k = insertPointsPMQ points1k "t" PMQ.empty
   let !pmq1k2 = insertPointsPMQ points1k "t" PMQ.empty
   let !mw1k = insertPointsMW points1k "t" MW.empty
+  print (testLookupSeq from to pmq1k)
+  print (testLookupEff from to pmq1k2)
+  print (testLookupMW from to mw1k)
   --  let !rtw1k = insertPointsRTW points1k "t" RTW.empty
   --  let !qtw1k = insertPointsQTW points1k ((PMQ.Coords 0 0), "t") (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))
 
@@ -117,6 +120,9 @@ benchDifferentQuadtreesWithDiffCount = do
   let !mw10k = insertPointsMW points10k "t" MW.empty
   --  let !rtw10k = insertPointsRTW points10k "t" RTW.empty
   --  let !qtw10k = insertPointsQTW points10k ((PMQ.Coords 0 0), "t") (QTW.empty (2^28) (2^28) ((PMQ.Coords 0 0), "."))  print (pmq10k)
+  print (testLookupSeq from to pmq10k)
+  print (testLookupEff from to pmq10k2)
+  print (testLookupMW from to mw10k)
 
   points100k <- generatePoints4Quadrants 25000
   let !pmq100k = insertPointsPMQ points100k "t" PMQ.empty

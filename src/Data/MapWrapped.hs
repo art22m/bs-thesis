@@ -31,3 +31,10 @@ rangeLookup' (PMQ.ZIndex zl) (PMQ.ZIndex zr) qt = go (getMap qt)
         (_, rmap) = DMap.split (zl - 1) dmap
         (lmap, _) = DMap.split (zr + 1) rmap
         filteredMap = DMap.filterWithKey (\k _ -> PMQ.isRelevant' zl zr k) lmap
+
+
+lookup :: PMQ.Coords n -> MapWrapped v -> Maybe v
+lookup c mw = DMap.lookup zid m
+  where
+    m = getMap mw
+    PMQ.ZIndex zid = PMQ.toZIndex c

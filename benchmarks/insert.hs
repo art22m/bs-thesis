@@ -30,23 +30,23 @@ benchInserts = do
     [ bgroup
         "1k"
         [ bench "PMQ" $ whnf (testInsertPMQ points1k "t") PMQ.empty,
-          bench "Data.Map" $ whnf (testInsertMW points1k "t") MW.empty
+          bench "Data.Map" $ whnf (testInsertMW points1k "t") MW.empty,
           -- bench "Data.RTree" $ whnf (testInsertRTW points1k "t") RTW.empty,
-          -- bench "Data.QuadTree" $ whnf (testInsertQTW points1k) (PMQ.Coords 0 0, "t")
+          bench "Data.QuadTree" $ whnf (testInsertQTW points1k) (PMQ.Coords 0 0, "t")
         ],
       bgroup
         "10k"
         [ bench "PMQ" $ whnf (testInsertPMQ points10k "t") PMQ.empty,
-          bench "Data.Map" $ whnf (testInsertMW points10k "t") MW.empty
+          bench "Data.Map" $ whnf (testInsertMW points10k "t") MW.empty,
           -- bench "Data.RTree" $ whnf (testInsertRTW points10k "t") RTW.empty,
-          -- bench "Data.QuadTree" $ whnf (testInsertQTW points10k) (PMQ.Coords 0 0, "t")
+          bench "Data.QuadTree" $ whnf (testInsertQTW points10k) (PMQ.Coords 0 0, "t")
         ],
       bgroup
         "100k"
         [ bench "PMQ" $ whnf (testInsertPMQ points100k "t") PMQ.empty,
-          bench "Data.Map" $ whnf (testInsertMW points100k "t") MW.empty
+          bench "Data.Map" $ whnf (testInsertMW points100k "t") MW.empty,
           -- bench "Data.RTree" $ whnf (testInsertRTW points100k "t") RTW.empty,
-          -- bench "Data.QuadTree" $ whnf (testInsertQTW points100k) (PMQ.Coords 0 0, "t")
+          bench "Data.QuadTree" $ whnf (testInsertQTW points100k) (PMQ.Coords 0 0, "t")
         ],
       bgroup
         "1kk"
@@ -81,13 +81,16 @@ randomPositions' count xl yl xr yr = do
   return $ take count $ zip xs ys
 
 testInsertPMQ :: [(Int, Int)] -> v -> Quadtree v -> Int
-testInsertPMQ points val pmq = 1
-  where
-    !pmq' = insertPointsPMQ points val PMQ.empty
-    -- !v = PMQ.lookup (PMQ.Coords 0 0) pmq'
+testInsertPMQ points val pmq = case PMQ.lookup (PMQ.Coords 0 0) pmq' of
+    Just _  -> 1
+    Nothing -> 0
+    where
+      !pmq' = insertPointsPMQ points val pmq
 
 testInsertMW :: [(Int, Int)] -> v -> MapWrapped v -> Int
-testInsertMW points val !mw = 1
+testInsertMW points val !mw = case MW.lookup (PMQ.Coords 0 0) mw' of
+    Just _  -> 1
+    Nothing -> 0
   where
     !mw' = insertPointsMW points val mw
 
@@ -96,14 +99,15 @@ testInsertRTW points val !rtw = 1
   where
     !rtw' = insertPointsRTW points val rtw
 
-testInsertQTW :: [(Int, Int)] -> (PMQ.Coords n, v) -> Int
-testInsertQTW points val = length (QTW.tile qtw')
+testInsertQTW :: Eq v => [(Int, Int)] -> (PMQ.Coords n, v) -> Int
+testInsertQTW points val = res
   where
-    !qtw = QTW.empty (2 ^ 28) (2 ^ 28) (PMQ.Coords 0 0, ".")
-    !qtw' = insertPointsQTW points ((PMQ.Coords 1 1), "t") qtw
+    !qtw = QTW.empty (2 ^ 28) (2 ^ 28) val
+    !qtw' = insertPointsQTW points val qtw
+    !(PMQ.Coords _ res, _) = QTW.lookup (PMQ.Coords 100 100) qtw'
 
 insertPointsPMQ :: [(Int, Int)] -> v -> Quadtree v -> Quadtree v
-insertPointsPMQ ((x, y) : points) val !qt = insertPointsPMQ points val (PMQ.insertP (PMQ.Coords x y) val qt)
+insertPointsPMQ ((x, y) : points) val !qt = insertPointsPMQ points val (PMQ.insertE (PMQ.Coords x y) val qt)
 insertPointsPMQ [] _ !qt = qt
 
 insertPointsMW :: [(Int, Int)] -> v -> MapWrapped v -> MapWrapped v

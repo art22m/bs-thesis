@@ -211,7 +211,6 @@ rangeLookupSeq' zl zr qt = rangeLookupSeq'' zl zr zl zr qt
 rangeLookupSeq'' :: ZIndex n -> ZIndex n -> ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
   rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap) ++ rangeNS (Map.getNS pmaMap)
-  -- rangeNS (Map.getNS pmaMap)
   where
     pmaMap = getPMAMap qt
 
@@ -290,9 +289,7 @@ rangeLookup (Coords x1 y1) (Coords x2 y2) qt = rangeLookup' (toZIndex cl) (toZIn
 
 rangeLookup' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup' (ZIndex zl) (ZIndex zr) qt =
-  rangePMA (Map.getPMA pmaMap)
-    ++ rangeDMap (Map.getMap pmaMap)
-    ++ rangeNS (Map.getNS pmaMap)
+  rangeNS (Map.getNS pmaMap) ++ rangePMA (Map.getPMA pmaMap) ++ rangeDMap (Map.getMap pmaMap)
   where
     pmaMap = getPMAMap qt
 
@@ -309,40 +306,73 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
         (lmap, _) = DMap.split (zr + 1) rmap
         filteredMap = DMap.filterWithKey (\k _ -> isRelevant' zl zr k) lmap
 
-    findClosestIndex :: Int -> Map.Chunk Int v -> Int -> Int -> Maybe Int
+    findClosestIndex :: Int -> Map.Chunk Int v -> Int -> Int -> Int
     findClosestIndex targetKey vec low high
-      | high < low = if low < Vector.length vec then Just low else Nothing
+      | high < low = if low < Vector.length vec then low else (Vector.length vec)
       | otherwise =
           let mid = low + (high - low) `div` 2
               (midKey, _) = vec ! mid
            in if midKey == targetKey
-                then Just mid
+                then mid
                 else
                   if midKey < targetKey
                     then findClosestIndex targetKey vec (mid + 1) high
                     else findClosestIndex targetKey vec low (mid - 1)
 
-    rangeNS :: Map.NS Int v -> [(Coords n, v)]
-    rangeNS Map.M0 = []
-    rangeNS (Map.M1 as) = rangeChunk as
-    rangeNS (Map.M2 as bs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeNS rest
-    rangeNS (Map.M3 as bs cs _ rest) = rangeChunk as ++ rangeChunk bs ++ rangeChunk cs ++ rangeNS rest
+    findSplitIndexLeft :: Int -> Vector.Vector (Int, v) -> Int -> Int -> Int
+    findSplitIndexLeft !targetKey !vec !l !r
+      | l < r =
+          let !m = (l + r) `div` 2
+              !(midKey, _) = vec Vector.! m
+          in
+            if targetKey <= midKey
+              then findSplitIndexLeft targetKey vec l m
+              else findSplitIndexLeft targetKey vec (m + 1) r
+      | otherwise =
+        let !(midKey, _) = vec Vector.! l in
+        if midKey < targetKey then l + 1 else l
 
-    rangeChunk :: Map.Chunk Int v -> [(Coords n, v)]
-    rangeChunk ch = go (Just 0) []
+    findSplitIndexRight :: Int -> Vector.Vector (Int, v) -> Int -> Int -> Int
+    findSplitIndexRight !targetKey !vec !l !r
+      | l < r =
+          let !m = (l + r + 1) `div` 2
+              !(midKey, _) = vec Vector.! m
+          in
+            if midKey <= targetKey
+              then findSplitIndexRight targetKey vec m r
+              else findSplitIndexRight targetKey vec l (m - 1)
+      | otherwise =
+          let !(midKey, _) = vec Vector.! l in
+          if midKey > targetKey then l else l + 1
+
+    rangeChunk :: Vector.Vector (Int, v) -> Vector.Vector (Coords n, v)
+    rangeChunk !ch = runST $ do
+        let !lIndex = findSplitIndexLeft zl ch 0 (Vector.length ch - 1)
+        let !rIndex = findSplitIndexRight zr ch lIndex (Vector.length ch - 1)
+        let !subVec = Vector.slice lIndex (rIndex - lIndex) ch
+        mvec <- MVector.new (Vector.length subVec)
+        let go i j
+              | i >= Vector.length subVec = return j
+              | otherwise = do
+                  let (key, value) = subVec Vector.! i
+                  if isRelevant' zl zr key
+                    then do
+                      MVector.write mvec j (fromZIndex' key, value)
+                      go (i + 1) (j + 1)
+                    else 
+                      go (findClosestIndex (nextZIndex' key zl zr) subVec i (Vector.length subVec - 1)) j
+                      -- go (i + 1) j
+        finalLength <- go 0 0
+        Vector.freeze (MVector.slice 0 finalLength mvec)
+
+    rangeNS :: Map.NS Int v -> [(Coords n, v)]
+    rangeNS !ns = Vector.toList $ go ns Vector.empty
       where
-        lastIndex = Vector.length ch - 1
-        go (Just index) acc
-          | index > lastIndex = acc
-          | otherwise =
-              let (key, value) = ch ! index
-               in if key > zr
-                    then acc
-                    else
-                      if isRelevant' zl zr key
-                        then go (Just (index + 1)) ((fromZIndex' key, value) : acc)
-                        else go (findClosestIndex (nextZIndex' key zl zr) ch index lastIndex) acc
-        go Nothing acc = acc
+        go :: Map.NS Int v -> Vector.Vector (Coords n, v) -> Vector.Vector (Coords n, v)
+        go Map.M0 acc = acc
+        go (Map.M1 as) acc = acc Vector.++ rangeChunk as
+        go (Map.M2 as bs _ rest) acc = acc Vector.++ rangeChunk as Vector.++ rangeChunk bs Vector.++ go rest Vector.empty
+        go (Map.M3 as bs cs _ rest) acc = acc Vector.++ rangeChunk as Vector.++ rangeChunk bs Vector.++ rangeChunk cs Vector.++ go rest Vector.empty
 
 rangeLookup'' :: ZIndex n -> ZIndex n -> Quadtree v -> [(Coords n, v)]
 rangeLookup'' (ZIndex zl) (ZIndex zr) qt = go qt zl zr zl 0 []
