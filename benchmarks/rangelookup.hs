@@ -140,11 +140,11 @@ benchDifferentQuadtreesWithDiffCount = do
   print (testLookupEff from to pmq1kk2)
   print (testLookupMW from to mw1kk)
 
---  points10kk <- generatePoints4Quadrants 2500000
---  let !pmq10kk = insertPointsPMQ points10kk "t" PMQ.empty
---  let !pmq10kk2 = insertPointsPMQ points10kk "t" PMQ.empty
---  let !mw10kk = insertPointsMW points10kk "t" MW.empty
---  let !rtw10kk = insertPointsRTW points10kk "t" RTW.empty
+  points10kk <- generatePoints4Quadrants 2500000
+  let !pmq10kk = insertPointsPMQ points10kk "t" PMQ.empty
+  let !pmq10kk2 = insertPointsPMQ points10kk "t" PMQ.empty
+  let !mw10kk = insertPointsMW points10kk "t" MW.empty
+  let !rtw10kk = insertPointsRTW points10kk "t" RTW.empty
 
 --  points1kkk <- generatePoints4Quadrants 250000000
 --  let !pmq1kkk = insertPointsPMQ points1kkk "t" PMQ.empty
