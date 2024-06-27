@@ -72,8 +72,8 @@ type Chunk k a = Vector (k, a)
 data NS k a
   = M0
   | M1 !(Vector (k, a))
-  | M2 !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) !(NS k a)
-  | M3 !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) !(NS k a)
+  | M2 !(Vector (k, a)) !(Vector (k, a)) (Vector (k, a)) !(NS k a)
+  | M3 !(Vector (k, a)) !(Vector (k, a)) !(Vector (k, a)) (Vector (k, a)) !(NS k a)
 
 instance (Show k, Show a) => Show (NS k a) where
   show M0                = "0 "
