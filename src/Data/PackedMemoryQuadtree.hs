@@ -182,6 +182,7 @@ findLeft !targetKey !vec !l !r
         if targetKey <= midKey
           then findLeft targetKey vec l m
           else findLeft targetKey vec (m + 1) r
+  | l >= Vector.length vec = Vector.length vec
   | otherwise =
     let !(midKey, _) = vec Vector.! l in
     if midKey < targetKey then l + 1 else l
@@ -195,6 +196,7 @@ findRight !targetKey !vec !l !r
         if midKey <= targetKey
           then findRight targetKey vec m r
           else findRight targetKey vec l (m - 1)
+  | l >= Vector.length vec = Vector.length vec
   | otherwise =
       let !(midKey, _) = vec Vector.! l in
       if midKey > targetKey then l else l + 1
@@ -236,6 +238,7 @@ rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
             if targetKey <= midKey
               then findSplitIndexLeft targetKey vec l m
               else findSplitIndexLeft targetKey vec (m + 1) r
+      | l >= Vector.length vec = Vector.length vec
       | otherwise =
         let !(midKey, _) = vec Vector.! l in
         if midKey < targetKey then l + 1 else l
@@ -249,6 +252,7 @@ rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
             if midKey <= targetKey
               then findSplitIndexRight targetKey vec m r
               else findSplitIndexRight targetKey vec l (m - 1)
+      | l >= Vector.length vec = Vector.length vec
       | otherwise =
           let !(midKey, _) = vec Vector.! l in
           if midKey > targetKey then l else l + 1
@@ -256,6 +260,7 @@ rangeLookupSeq'' (ZIndex zl') (ZIndex zr') (ZIndex zl) (ZIndex zr) qt =
     rangeChunk :: Vector.Vector (Int, v) -> Vector.Vector (Coords n, v)
     rangeChunk !ch = runST $ do
         let !lIndex = findSplitIndexLeft zl ch 0 (Vector.length ch - 1)
+--        error $ "" ++ show lIndex ++ " " ++ show zl ++ " " ++ show zr ++ " " ++ show (Vector.length ch)
         let !rIndex = findSplitIndexRight zr ch lIndex (Vector.length ch - 1)
         let !subVec = Vector.slice lIndex (rIndex - lIndex) ch
         mvec <- MVector.new (Vector.length subVec)
@@ -328,6 +333,7 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
             if targetKey <= midKey
               then findSplitIndexLeft targetKey vec l m
               else findSplitIndexLeft targetKey vec (m + 1) r
+      | l >= Vector.length vec = Vector.length vec
       | otherwise =
         let !(midKey, _) = vec Vector.! l in
         if midKey < targetKey then l + 1 else l
@@ -341,6 +347,7 @@ rangeLookup' (ZIndex zl) (ZIndex zr) qt =
             if midKey <= targetKey
               then findSplitIndexRight targetKey vec m r
               else findSplitIndexRight targetKey vec l (m - 1)
+      | l >= Vector.length vec = Vector.length vec
       | otherwise =
           let !(midKey, _) = vec Vector.! l in
           if midKey > targetKey then l else l + 1
